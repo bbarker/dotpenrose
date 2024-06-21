@@ -21,11 +21,15 @@
               rust-bin.stable.latest.default
               wayland
               pkg-config
+              nitrogen
+              polybar
+              picom
               xorg.libX11
               xorg.libXcursor
               xorg.libXrandr
               xorg.libXxf86vm
               xorg.libXi
+              xorg.xmodmap
               libglvnd
             ];
 
