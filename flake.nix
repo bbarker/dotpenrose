@@ -24,6 +24,13 @@
               nitrogen
               polybar
               picom
+              haskellPackages.yeganesh
+              xscreensaver
+              dmenu
+              gnome.gnome-keyring # TODO: move to home-manager?
+
+              rust-analyzer
+
               xorg.libX11
               xorg.libXcursor
               xorg.libXrandr

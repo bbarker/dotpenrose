@@ -115,6 +115,6 @@ Here are the most important keybindings to control the window manager
 
 'Meta' + ',' to spawn dmenu prompt for application runner
 
-'Meta' + 'Alt' + ['Up', 'Down', 'Left', 'Right'] to change tiling layout
+'Meta' + 'Shift' + ['Up', 'Down', 'Left', 'Right'] to change tiling layout
 
 For a complete binding list, check out 'src/main.rs'

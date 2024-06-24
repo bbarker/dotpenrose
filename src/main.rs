@@ -27,7 +27,7 @@ fn raw_key_bindings() -> HashMap<String, Box<dyn KeyEventHandler<RustConn>>> {
         "M-a" => modify_with(|cs| cs.focus_up()),
         "M-S-n" => modify_with(|cs| cs.swap_down()),
         "M-S-a" => modify_with(|cs| cs.swap_up()),
-        "M-q" => modify_with(|cs| cs.kill_focused()),
+        "M-S-c" => modify_with(|cs| cs.kill_focused()),
         "M-Tab" => modify_with(|cs| cs.toggle_tag()),
         "M-m" => modify_with(|cs| cs.next_screen()),
         "M-i" => modify_with(|cs| cs.previous_screen()),
@@ -37,8 +37,9 @@ fn raw_key_bindings() -> HashMap<String, Box<dyn KeyEventHandler<RustConn>>> {
         "M-S-Down" => send_layout_message(|| IncMain(-1)),
         "M-S-Right" => send_layout_message(|| ExpandMain),
         "M-S-Left" => send_layout_message(|| ShrinkMain),
-        "M-comma" => spawn("dmenu_run"),
-        "M-Return" => spawn("alacritty"),
+        "M-p" => spawn("dmenu_run"),
+        // "M-p" => spawn("yeganesh -x"), // not working for some reason
+        "M-S-Return" => spawn("alacritty"),
         "M-A-Escape" => exit(),
     };
 
