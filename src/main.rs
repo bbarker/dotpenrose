@@ -4,7 +4,7 @@ use penrose::{
     builtin::{
         actions::{exit, modify_with, send_layout_message, spawn},
         layout::{
-            messages::{ExpandMain, IncMain, ShrinkMain},
+            messages::{ExpandMain, IncMain, Rotate, ShrinkMain},
             MainAndStack,
         },
     },
@@ -31,12 +31,13 @@ fn raw_key_bindings() -> HashMap<String, Box<dyn KeyEventHandler<RustConn>>> {
         "M-Tab" => modify_with(|cs| cs.toggle_tag()),
         "M-m" => modify_with(|cs| cs.next_screen()),
         "M-i" => modify_with(|cs| cs.previous_screen()),
-        "M-grave" => modify_with(|cs| cs.next_layout()),
-        "M-S-grave" => modify_with(|cs| cs.previous_layout()),
+        "M-space" => modify_with(|cs| cs.next_layout()),
+        "M-S-space" => modify_with(|cs| cs.previous_layout()),
         "M-S-Up" => send_layout_message(|| IncMain(1)),
         "M-S-Down" => send_layout_message(|| IncMain(-1)),
         "M-S-Right" => send_layout_message(|| ExpandMain),
         "M-S-Left" => send_layout_message(|| ShrinkMain),
+        "M-Return" => send_layout_message(|| Rotate),
         "M-p" => spawn("dmenu_run"),
         // "M-p" => spawn("yeganesh -x"), // not working for some reason
         "M-S-Return" => spawn("alacritty"),
