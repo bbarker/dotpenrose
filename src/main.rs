@@ -20,7 +20,7 @@ use std::collections::HashMap;
 use tracing_subscriber::util::SubscriberInitExt;
 
 fn raw_key_bindings() -> HashMap<String, Box<dyn KeyEventHandler<RustConn>>> {
-    let mut raw_bindings = map! {
+    let action_bindings = map! {
         map_keys: |k: &str| k.to_string();
 
         "M-n" => modify_with(|cs| cs.focus_down()),
@@ -44,20 +44,45 @@ fn raw_key_bindings() -> HashMap<String, Box<dyn KeyEventHandler<RustConn>>> {
         "M-A-Escape" => exit(),
     };
 
-    for tag in &["1", "2", "3", "4", "5", "6", "7", "8", "9"] {
-        raw_bindings.extend([
-            (
-                format!("M-{tag}"),
-                modify_with(move |client_set| client_set.focus_tag(tag)),
-            ),
-            (
-                format!("M-S-{tag}"),
-                modify_with(move |client_set| client_set.move_focused_to_tag(tag)),
-            ),
-        ]);
-    }
-
-    raw_bindings
+    (["1", "2", "3", "4", "5", "6", "7", "8", "9"])
+        .into_iter()
+        .flat_map(|tag| {
+            [
+                (
+                    format!("M-{tag}"),
+                    modify_with(move |client_set| client_set.focus_tag(tag)),
+                ),
+                (
+                    format!("M-S-{tag}"),
+                    modify_with(move |client_set| client_set.move_focused_to_tag(tag)),
+                ),
+            ]
+        })
+        // TODO: in the future, maybe enter a mode so that we can create an arbitrary
+        // number of desktops - kind of like launching dmenu to pick an app, but
+        // instead launch a workspace picker
+        .chain(
+            (["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"])
+                .into_iter()
+                .flat_map(|tag_base| {
+                    let tag1 = format!("1{tag_base}");
+                    let tag2 = tag1.clone();
+                    [
+                        (
+                            format!("M-C-{tag_base}"),
+                            modify_with(move |client_set| client_set.focus_tag(tag1.as_str())),
+                        ),
+                        (
+                            format!("M-S-C-{tag_base}"),
+                            modify_with(move |client_set| {
+                                client_set.move_focused_to_tag(tag2.as_str())
+                            }),
+                        ),
+                    ]
+                }),
+        )
+        .chain(action_bindings)
+        .collect::<HashMap<String, Box<dyn KeyEventHandler<RustConn>>>>()
 }
 
 fn main() -> Result<()> {
