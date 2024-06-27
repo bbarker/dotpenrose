@@ -12,6 +12,7 @@ use penrose::{
         bindings::{parse_keybindings_with_xmodmap, KeyEventHandler},
         Config, WindowManager,
     },
+    extensions::hooks::{add_ewmh_hooks, SpawnOnStartup},
     map, stack,
     x11rb::RustConn,
     Result,
@@ -73,8 +74,9 @@ fn raw_key_bindings() -> HashMap<String, Box<dyn KeyEventHandler<RustConn>>> {
                             modify_with(move |client_set| client_set.focus_tag(tag1.as_str())),
                         ),
                         (
-                            format!("M-S-C-{tag_base}"),
+                            format!("M-C-S-{tag_base}"),
                             modify_with(move |client_set| {
+                                println!("DEBUG: move to {tag2}");
                                 client_set.move_focused_to_tag(tag2.as_str())
                             }),
                         ),
@@ -93,11 +95,12 @@ fn main() -> Result<()> {
 
     let conn = RustConn::new()?;
     let key_bindings = parse_keybindings_with_xmodmap(raw_key_bindings())?;
-    let stack = MainAndStack::bottom(1, 0.5, 0.1);
-    let config = Config {
+    let stack = MainAndStack::side(1, 0.5, 0.1);
+    let config = add_ewmh_hooks(Config {
         default_layouts: stack!(stack),
+        startup_hook: Some(SpawnOnStartup::boxed("polybar")),
         ..Default::default()
-    };
+    });
     let wm = WindowManager::new(config, key_bindings, HashMap::new(), conn)?;
 
     wm.run()

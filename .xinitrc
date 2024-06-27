@@ -27,7 +27,7 @@ xrandr --output DP-0 --rotate left --right-of DP-2 &&
 xrandr --output DP-4 --rotate left --left-of DP-2 &&
 log_msg "end xrandr commands"
 
-polybar & log_msg "started polybar" &&
+# polybar & log_msg "started polybar" && # switching to start from penrose
 picom & log_msg "started picom" &&
 nitrogen --set-zoom-fill --random "$PENROSE_DIR/wallpapers" & log_msg "started nitrogen" &&
 exec "$PENROSE_DIR/run_penrose.sh"
