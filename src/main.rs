@@ -1,5 +1,3 @@
-#![deny(unused_crate_dependencies)]
-
 use penrose::{
     builtin::{
         actions::{exit, modify_with, send_layout_message, spawn},
@@ -19,6 +17,8 @@ use penrose::{
 };
 use std::collections::HashMap;
 use tracing_subscriber::util::SubscriberInitExt;
+
+use dotpenrose::bar::status_bar;
 
 fn raw_key_bindings() -> HashMap<String, Box<dyn KeyEventHandler<RustConn>>> {
     let action_bindings = map! {
@@ -98,10 +98,16 @@ fn main() -> Result<()> {
     let stack = MainAndStack::side(1, 0.5, 0.1);
     let config = add_ewmh_hooks(Config {
         default_layouts: stack!(stack),
-        startup_hook: Some(SpawnOnStartup::boxed("polybar")),
+        // startup_hook: Some(SpawnOnStartup::boxed("polybar")),
         ..Default::default()
     });
-    let wm = WindowManager::new(config, key_bindings, HashMap::new(), conn)?;
 
+    let bar = status_bar().unwrap(); // FIXME: properaly convert error
+    let wm = bar.add_to(WindowManager::new(
+        config,
+        key_bindings,
+        HashMap::new(),
+        conn,
+    )?);
     wm.run()
 }

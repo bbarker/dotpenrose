@@ -8,9 +8,11 @@ publish = false
 readme = "README.md"
 
 [dependencies]
-penrose = { version = "^0.3", features = ["keysyms", "serde"] }
+penrose = { git = "https://github.com/sminez/penrose.git", rev = "bbb2edc", features = ["keysyms", "serde"] }
+penrose_ui = { git = "https://github.com/sminez/penrose.git", rev = "bbb2edc" }
 tracing-subscriber = { version = "^0.3", features = ["env-filter"] }
 
 [profile.release]
 lto = "fat"
 codegen-units = 1
+

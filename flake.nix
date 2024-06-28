@@ -22,7 +22,7 @@
               wayland
               pkg-config
               nitrogen
-              polybar
+              # polybar
               picom
               haskellPackages.yeganesh
               xscreensaver
@@ -38,6 +38,7 @@
               xorg.libXi
               xorg.xmodmap
               libglvnd
+              xorg.libXft # for penrose_ui
             ];
 
             nativeBuildInputs = [
