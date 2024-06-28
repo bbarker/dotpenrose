@@ -3,11 +3,13 @@ use penrose::{
         actions::{exit, modify_with, send_layout_message, spawn},
         layout::{
             messages::{ExpandMain, IncMain, Rotate, ShrinkMain},
+            transformers::ReserveTop,
             MainAndStack,
         },
     },
     core::{
         bindings::{parse_keybindings_with_xmodmap, KeyEventHandler},
+        layout::LayoutStack,
         Config, WindowManager,
     },
     extensions::hooks::{add_ewmh_hooks, SpawnOnStartup},
@@ -18,7 +20,7 @@ use penrose::{
 use std::collections::HashMap;
 use tracing_subscriber::util::SubscriberInitExt;
 
-use dotpenrose::bar::status_bar;
+use dotpenrose::bar::{status_bar, BAR_HEIGHT_PX_PRIMARY};
 
 fn raw_key_bindings() -> HashMap<String, Box<dyn KeyEventHandler<RustConn>>> {
     let action_bindings = map! {
@@ -87,6 +89,11 @@ fn raw_key_bindings() -> HashMap<String, Box<dyn KeyEventHandler<RustConn>>> {
         .collect::<HashMap<String, Box<dyn KeyEventHandler<RustConn>>>>()
 }
 
+fn layout() -> LayoutStack {
+    let stack = MainAndStack::side(1, 0.5, 0.1);
+    stack!(stack).map(|layout| ReserveTop::wrap(layout, BAR_HEIGHT_PX_PRIMARY))
+}
+
 fn main() -> Result<()> {
     tracing_subscriber::fmt()
         .with_env_filter("info")
@@ -95,9 +102,8 @@ fn main() -> Result<()> {
 
     let conn = RustConn::new()?;
     let key_bindings = parse_keybindings_with_xmodmap(raw_key_bindings())?;
-    let stack = MainAndStack::side(1, 0.5, 0.1);
     let config = add_ewmh_hooks(Config {
-        default_layouts: stack!(stack),
+        default_layouts: layout(),
         // startup_hook: Some(SpawnOnStartup::boxed("polybar")),
         ..Default::default()
     });
