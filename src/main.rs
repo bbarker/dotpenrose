@@ -1,6 +1,7 @@
+use once_cell::sync::Lazy;
 use penrose::{
     builtin::{
-        actions::{exit, modify_with, send_layout_message, spawn},
+        actions::{exit, key_handler, modify_with, send_layout_message, spawn},
         layout::{
             messages::{ExpandMain, IncMain, Rotate, ShrinkMain},
             transformers::ReserveTop,
@@ -12,15 +13,31 @@ use penrose::{
         layout::LayoutStack,
         Config, WindowManager,
     },
-    extensions::hooks::{add_ewmh_hooks, SpawnOnStartup},
+    extensions::{
+        hooks::{add_ewmh_hooks, SpawnOnStartup},
+        util::dmenu::{DMenu, DMenuConfig},
+    },
     map, stack,
     x11rb::RustConn,
     Result,
 };
-use std::collections::HashMap;
+use std::ops::Range;
+use std::{collections::HashMap, ops::RangeBounds};
 use tracing_subscriber::util::SubscriberInitExt;
 
 use dotpenrose::bar::{status_bar, BAR_HEIGHT_PX_PRIMARY};
+
+// Let's start with 29 tags
+const WORKSPACES: Range<u16> = 1..30;
+static ALL_TAGS: Lazy<Vec<String>> = Lazy::new(|| WORKSPACES.map(|ix| ix.to_string()).collect());
+
+fn workspace_menu() -> Box<dyn KeyEventHandler<RustConn>> {
+    key_handler(|state, xcon| {
+        let sc_ix = state.client_set.current_screen().index();
+        let dmenu = DMenu::new(&DMenuConfig::default(), sc_ix);
+        Ok(())
+    })
+}
 
 fn raw_key_bindings() -> HashMap<String, Box<dyn KeyEventHandler<RustConn>>> {
     let action_bindings = map! {
@@ -104,6 +121,7 @@ fn main() -> Result<()> {
     let key_bindings = parse_keybindings_with_xmodmap(raw_key_bindings())?;
     let config = add_ewmh_hooks(Config {
         default_layouts: layout(),
+        tags: ALL_TAGS.clone(),
         // startup_hook: Some(SpawnOnStartup::boxed("polybar")),
         ..Default::default()
     });

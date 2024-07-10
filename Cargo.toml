@@ -11,6 +11,8 @@ readme = "README.md"
 penrose = { git = "https://github.com/sminez/penrose.git", rev = "bbb2edc", features = ["keysyms", "serde"] }
 penrose_ui = { git = "https://github.com/sminez/penrose.git", rev = "bbb2edc" }
 tracing-subscriber = { version = "^0.3", features = ["env-filter"] }
+# func-iter = "0.1.0"
+once_cell = "1.19.0"
 
 [profile.release]
 lto = "fat"
