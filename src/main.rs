@@ -1,3 +1,5 @@
+#![allow(clippy::unit_arg)]
+
 use once_cell::sync::Lazy;
 use penrose::{
     builtin::{
@@ -15,7 +17,7 @@ use penrose::{
     },
     extensions::{
         hooks::{add_ewmh_hooks, SpawnOnStartup},
-        util::dmenu::{DMenu, DMenuConfig},
+        util::dmenu::{DMenu, DMenuConfig, MenuMatch},
     },
     map, stack,
     x11rb::RustConn,
@@ -32,17 +34,21 @@ const WORKSPACES: Range<u16> = 1..30;
 static ALL_TAGS: Lazy<Vec<String>> = Lazy::new(|| WORKSPACES.map(|ix| ix.to_string()).collect());
 
 fn workspace_menu() -> Box<dyn KeyEventHandler<RustConn>> {
-    key_handler(|state, xcon| {
+    key_handler(|state, _xcon| {
         let sc_ix = state.client_set.current_screen().index();
         let dmenu = DMenu::new(&DMenuConfig::default(), sc_ix);
-        Ok(())
+        if let Ok(MenuMatch::Line(_, choice)) = dmenu.build_menu(ALL_TAGS.clone()) {
+            Ok(state.client_set.focus_tag(choice))
+        } else {
+            Ok(())
+        }
     })
 }
 
 fn raw_key_bindings() -> HashMap<String, Box<dyn KeyEventHandler<RustConn>>> {
     let action_bindings = map! {
         map_keys: |k: &str| k.to_string();
-
+        "M-g" => workspace_menu(),
         "M-n" => modify_with(|cs| cs.focus_down()),
         "M-a" => modify_with(|cs| cs.focus_up()),
         "M-S-n" => modify_with(|cs| cs.swap_down()),
