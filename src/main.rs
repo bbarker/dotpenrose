@@ -17,7 +17,7 @@ use penrose::{
     },
     extensions::{
         hooks::{add_ewmh_hooks, SpawnOnStartup},
-        util::dmenu::{DMenu, DMenuConfig, MenuMatch},
+        util::dmenu::{DMenu, DMenuConfig, DMenuKind, MenuMatch},
     },
     map, stack,
     x11rb::RustConn,
@@ -36,7 +36,15 @@ static ALL_TAGS: Lazy<Vec<String>> = Lazy::new(|| WORKSPACES.map(|ix| ix.to_stri
 fn workspace_menu() -> Box<dyn KeyEventHandler<RustConn>> {
     key_handler(|state, _xcon| {
         let sc_ix = state.client_set.current_screen().index();
-        let dmenu = DMenu::new(&DMenuConfig::default(), sc_ix);
+        // TODO: also replace dmenu program selector with dmenu-rs
+        let dmenu = DMenu::new(
+            &DMenuConfig {
+                kind: DMenuKind::Suckless, // Rust doesn't seem to work yet
+                custom_prompt: Some("workspace> ".to_string()),
+                ..Default::default()
+            },
+            sc_ix,
+        );
         if let Ok(MenuMatch::Line(_, choice)) = dmenu.build_menu(ALL_TAGS.clone()) {
             Ok(state.client_set.focus_tag(choice))
         } else {
