@@ -37,10 +37,9 @@ static ALL_TAGS: Lazy<Vec<String>> = Lazy::new(|| WORKSPACES.map(|ix| ix.to_stri
 fn workspace_menu() -> Box<dyn KeyEventHandler<RustConn>> {
     key_handler(|state, _xcon| {
         let sc_ix = state.client_set.current_screen().index();
-        // TODO: also replace dmenu program selector with dmenu-rs
         let dmenu = DMenu::new(
             &DMenuConfig {
-                kind: DMenuKind::Suckless, // Rust doesn't seem to work yet
+                kind: DMenuKind::Rust,
                 custom_prompt: Some("workspace> ".to_string()),
                 ..Default::default()
             },

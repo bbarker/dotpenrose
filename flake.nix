@@ -22,11 +22,10 @@
               wayland
               pkg-config
               nitrogen
-              # polybar
               picom
               haskellPackages.yeganesh
               xscreensaver
-              dmenu
+              dmenu-rs
               gnome.gnome-keyring # TODO: move to home-manager?
 
               rust-analyzer

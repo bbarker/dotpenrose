@@ -1,7 +1,6 @@
 #![warn(clippy::all)]
 #![warn(future_incompatible, rust_2024_compatibility)]
 // #![deny(unused_crate_dependencies)]
-#![allow(clippy::unit_arg)]
 pub mod bar;
 
 pub const FONT: &str = "DejaVu Sans Mono";
