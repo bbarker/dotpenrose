@@ -23,15 +23,15 @@ use penrose::{
     x11rb::RustConn,
     Result,
 };
-use std::ops::Range;
-use std::{collections::HashMap, ops::RangeBounds};
+use std::collections::HashMap;
+use std::ops::RangeInclusive;
 use tracing_subscriber::util::SubscriberInitExt;
 
 use dotpenrose::bar::{status_bar, BAR_HEIGHT_PX_PRIMARY};
 
 // Let's start with 29 tags
-const NUM_FAST_ACCESS_WORKSPACES: u16 = 10;
-const WORKSPACES: Range<u16> = 1..(NUM_FAST_ACCESS_WORKSPACES + 20);
+const NUM_FAST_ACCESS_WORKSPACES: u16 = 9;
+const WORKSPACES: RangeInclusive<u16> = 1..=(NUM_FAST_ACCESS_WORKSPACES + 20);
 static ALL_TAGS: Lazy<Vec<String>> = Lazy::new(|| WORKSPACES.map(|ix| ix.to_string()).collect());
 
 fn workspace_menu() -> Box<dyn KeyEventHandler<RustConn>> {
@@ -78,7 +78,7 @@ fn raw_key_bindings() -> HashMap<String, Box<dyn KeyEventHandler<RustConn>>> {
         "M-S-Return" => spawn("alacritty"),
         "M-A-Escape" => exit(),
     };
-    (1..NUM_FAST_ACCESS_WORKSPACES)
+    (1..=NUM_FAST_ACCESS_WORKSPACES)
         .map(|ws| ws.to_string())
         .flat_map(|tag| {
             let tag_copy = tag.clone();
