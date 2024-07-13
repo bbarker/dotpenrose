@@ -30,7 +30,8 @@ use tracing_subscriber::util::SubscriberInitExt;
 use dotpenrose::bar::{status_bar, BAR_HEIGHT_PX_PRIMARY};
 
 // Let's start with 29 tags
-const WORKSPACES: Range<u16> = 1..30;
+const NUM_FAST_ACCESS_WORKSPACES: u16 = 10;
+const WORKSPACES: Range<u16> = 1..(NUM_FAST_ACCESS_WORKSPACES + 20);
 static ALL_TAGS: Lazy<Vec<String>> = Lazy::new(|| WORKSPACES.map(|ix| ix.to_string()).collect());
 
 fn workspace_menu() -> Box<dyn KeyEventHandler<RustConn>> {
@@ -77,45 +78,21 @@ fn raw_key_bindings() -> HashMap<String, Box<dyn KeyEventHandler<RustConn>>> {
         "M-S-Return" => spawn("alacritty"),
         "M-A-Escape" => exit(),
     };
-
-    (["1", "2", "3", "4", "5", "6", "7", "8", "9"])
-        .into_iter()
+    (1..NUM_FAST_ACCESS_WORKSPACES)
+        .map(|ws| ws.to_string())
         .flat_map(|tag| {
+            let tag_copy = tag.clone();
             [
                 (
-                    format!("M-{tag}"),
-                    modify_with(move |client_set| client_set.focus_tag(tag)),
+                    format!("M-{tag_copy}"),
+                    modify_with(move |client_set| client_set.focus_tag(tag_copy.clone())),
                 ),
                 (
-                    format!("M-S-{tag}"),
-                    modify_with(move |client_set| client_set.move_focused_to_tag(tag)),
+                    format!("M-S-{}", tag.clone()),
+                    modify_with(move |client_set| client_set.move_focused_to_tag(tag.clone())),
                 ),
             ]
         })
-        // TODO: in the future, maybe enter a mode so that we can create an arbitrary
-        // number of desktops - kind of like launching dmenu to pick an app, but
-        // instead launch a workspace picker
-        .chain(
-            (["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"])
-                .into_iter()
-                .flat_map(|tag_base| {
-                    let tag1 = format!("1{tag_base}");
-                    let tag2 = tag1.clone();
-                    [
-                        (
-                            format!("M-C-{tag_base}"),
-                            modify_with(move |client_set| client_set.focus_tag(tag1.as_str())),
-                        ),
-                        (
-                            format!("M-C-S-{tag_base}"),
-                            modify_with(move |client_set| {
-                                println!("DEBUG: move to {tag2}");
-                                client_set.move_focused_to_tag(tag2.as_str())
-                            }),
-                        ),
-                    ]
-                }),
-        )
         .chain(action_bindings)
         .collect::<HashMap<String, Box<dyn KeyEventHandler<RustConn>>>>()
 }
