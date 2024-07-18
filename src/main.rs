@@ -53,10 +53,31 @@ fn workspace_menu() -> Box<dyn KeyEventHandler<RustConn>> {
     })
 }
 
+fn send_to_workspace_menu() -> Box<dyn KeyEventHandler<RustConn>> {
+    key_handler(|state, _xcon| {
+        let sc_ix = state.client_set.current_screen().index();
+        let dmenu = DMenu::new(
+            &DMenuConfig {
+                kind: DMenuKind::Rust,
+                show_on_bottom: true,
+                custom_prompt: Some("send to> ".to_string()),
+                ..Default::default()
+            },
+            sc_ix,
+        );
+        if let Ok(MenuMatch::Line(_, choice)) = dmenu.build_menu(ALL_TAGS.clone()) {
+            Ok(state.client_set.move_focused_to_tag(choice))
+        } else {
+            Ok(())
+        }
+    })
+}
+
 fn raw_key_bindings() -> HashMap<String, Box<dyn KeyEventHandler<RustConn>>> {
     let action_bindings = map! {
         map_keys: |k: &str| k.to_string();
         "M-g" => workspace_menu(),
+        "M-S-g" => send_to_workspace_menu(),
         "M-n" => modify_with(|cs| cs.focus_down()),
         "M-a" => modify_with(|cs| cs.focus_up()),
         "M-S-n" => modify_with(|cs| cs.swap_down()),
