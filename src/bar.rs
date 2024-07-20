@@ -8,6 +8,7 @@ use penrose::{
 use penrose_ui::{
     bar::{
         widgets::{
+            sys::helpers::battery_file_search,
             sys::interval::{amixer_volume, battery_summary, current_date_and_time, wifi_network},
             ActiveWindowName, CurrentLayout, Widget, Workspaces,
         },
@@ -17,6 +18,10 @@ use penrose_ui::{
 };
 use std::time::Duration;
 
+use once_cell::sync::Lazy;
+
+pub static BATTERY: Lazy<String> =
+    Lazy::new(|| battery_file_search().unwrap_or("BAT1".to_string()));
 // TODO: Work out how to change the highlight color to RED when we pass a certain
 //   date '+%H%M' might be a quick and dirty way to get the current hour/minute value for
 //   comparison against a switch time for changing out the color of theactive window widget at
@@ -64,7 +69,7 @@ fn base_widgets<X: XConn>() -> Vec<Box<dyn Widget<X>>> {
         // so dropping this for now.
         // Box::new(IntervalText::new(pstyle, weather_text, ms(300_000))),
         Box::new(wifi_network(pstyle, ms(10_000))),
-        Box::new(battery_summary("BAT1", pstyle, ms(60_000))),
+        Box::new(battery_summary(&BATTERY, pstyle, ms(60_000))),
         Box::new(amixer_volume("Master", pstyle, ms(1000))),
         Box::new(current_date_and_time(pstyle, ms(10_000))),
     ]
