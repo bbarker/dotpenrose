@@ -21,6 +21,8 @@
               rust-bin.stable.latest.default
               wayland
               pkg-config
+              # TODO: don't install all nerdfonts
+              nerdfonts
               nitrogen
               picom
               haskellPackages.yeganesh
@@ -60,6 +62,14 @@
               xorg.libXi
               xorg.libXrandr
             ];
+
+            shellHook = ''
+              # Ideally fonts are installed via the system, but here's
+              # a hack to not need to do that ( https://nixos.wiki/wiki/Fonts ):
+              mkdir -p $HOME/.local/share/fonts
+              cp --update=none $(nix-build --no-out-link '<nixpkgs>' -A nerdfonts)/share/fonts/opentype/NerdFonts/*Hasklug*.otf ~/.local/share/fonts
+              fc-cache
+            '';
           };
         }
       );

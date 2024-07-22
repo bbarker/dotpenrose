@@ -3,7 +3,7 @@
 // #![deny(unused_crate_dependencies)]
 pub mod bar;
 
-pub const FONT: &str = "DejaVu Sans Mono";
+pub const FONT: &str = "Hasklug Nerd Font Mono";
 
 // Kanagawa
 // https://github.com/rebelot/kanagawa.nvim?tab=readme-ov-file#color-palette

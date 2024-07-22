@@ -47,7 +47,7 @@ Install dependencies (arch):
 
 ```shell
 sudo pacman -Syu
-sudo pacman -S cmake pkg-config fontconfig python3 cairo pango xorg-xinit xorg-server nitrogen firefox dmenu acpilight fzf rust-analyzer picom htop barrier neofetch openssh tree clang nvtop noto-fonts-emoji adobe-source-code-pro-fonts
+sudo pacman -S cmake pkg-config fontconfig python3 cairo pango xorg-xinit xorg-server nitrogen firefox dmenu acpilight fzf rust-analyzer picom htop barrier neofetch openssh tree clang nvtop
 ```
 
 Now install rust based software, (assuming those software specific dependencies are satisfied)
@@ -61,17 +61,6 @@ cargo install cargo-udeps cargo-multi cargo-outdated cargo-semver-checks cargo-e
 
 ## Configuration
 
-To install Terminess font do:
-```shell
-mkdir -p ~/.local/share/fonts
-cp fonts/* ~/.local/share/fonts
-```
-
-Setup starship prompt:
-```shell
-mkdir -p ~/.cache/starship
-starship init nu > ~/.cache/starship/init.nu
-```
 
 Place config files to appropriate location
 ```shell
