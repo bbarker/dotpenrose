@@ -13,13 +13,14 @@ use penrose::{
     core::{
         bindings::{parse_keybindings_with_xmodmap, KeyEventHandler},
         layout::LayoutStack,
-        Config, WindowManager,
+        Config, State, WindowManager,
     },
     extensions::{
         hooks::{add_ewmh_hooks, SpawnOnStartup},
         util::dmenu::{DMenu, DMenuConfig, DMenuKind, MenuMatch},
     },
     map, stack,
+    x::XConnExt,
     x11rb::RustConn,
     Result,
 };
@@ -73,9 +74,60 @@ fn send_to_workspace_menu() -> Box<dyn KeyEventHandler<RustConn>> {
     })
 }
 
+// TODO: filter out empty workspaces
+// TODO: sort workspaces -> use func-iter, but fix mutability and add test
+//     : in func-iter
+fn goto_workspace_by_apps() -> Box<dyn KeyEventHandler<RustConn>> {
+    fn extract_tag(str: &str) -> Option<&str> {
+        let parts: Vec<_> = str.splitn(2, ':').collect();
+        if parts.len() == 2 {
+            parts.first().map(|part| part.trim())
+        } else {
+            None
+        }
+    }
+
+    key_handler(|state: &mut State<RustConn>, xcon: &RustConn| {
+        let sc_ix = state.client_set.current_screen().index();
+        let dmenu = DMenu::new(
+            &DMenuConfig {
+                kind: DMenuKind::Rust,
+                custom_prompt: Some("workspace> ".to_string()),
+                ..Default::default()
+            },
+            sc_ix,
+        );
+        let entries = state
+            .client_set
+            .workspaces()
+            .map(|ws| {
+                let tag = state
+                    .client_set
+                    .tag_for_workspace_id(ws.id())
+                    .unwrap_or_default();
+                let window_titles = ws
+                    .clients()
+                    .map(|client| xcon.window_title(*client).unwrap_or_default())
+                    .map(|title| title[..20].to_string())
+                    .collect::<Vec<String>>()
+                    .join(" | ");
+                format!("{}: {}", tag, window_titles)
+            })
+            .collect();
+        if let Ok(MenuMatch::Line(_, choice)) = dmenu.build_menu(entries) {
+            extract_tag(&choice)
+                .ok_or(penrose::Error::Custom("No tag for workspace".to_string()))
+                .map(|tag| state.client_set.focus_tag(tag))
+        } else {
+            Ok(())
+        }
+    })
+}
+
 fn raw_key_bindings() -> HashMap<String, Box<dyn KeyEventHandler<RustConn>>> {
     let action_bindings = map! {
         map_keys: |k: &str| k.to_string();
+        "M-f" => goto_workspace_by_apps(),
         "M-g" => workspace_menu(),
         "M-S-g" => send_to_workspace_menu(),
         "M-n" => modify_with(|cs| cs.focus_down()),
