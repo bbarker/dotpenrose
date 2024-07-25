@@ -20,7 +20,7 @@ use penrose::{
         util::dmenu::{DMenu, DMenuConfig, DMenuKind, MenuMatch},
     },
     map, stack,
-    x::XConnExt,
+    x::{Atom, XConn, XConnExt},
     x11rb::RustConn,
     Result,
 };
@@ -109,10 +109,33 @@ fn goto_workspace_by_apps() -> Box<dyn KeyEventHandler<RustConn>> {
                     .clients()
                     .map(|client| xcon.window_title(*client).unwrap_or_default())
                     .map(|title| title[..20].to_string())
-                    .collect::<Vec<String>>()
-                    .join(" | ");
-                format!("{}: {}", tag, window_titles)
+                    .collect::<Vec<String>>();
+                let app_names = ws
+                    .clients()
+                    .map(|client| xcon.get_prop(*client, "_NET_WM_PID"))
+                    // .map(|prop_res| match prop_res {
+                    //     Ok(Some(penrose::x::Prop::Cardinal(cardinals))) => cardinals
+                    //         .into_iter()
+                    //         .map(|c| c.to_string())
+                    //         .collect::<Vec<String>>()
+                    //         .join(","),
+                    //     _ => String::new(),
+                    // })
+                    .map(|_| "tmp".to_string())
+                    .collect::<Vec<String>>();
+                let display_string = {
+                    let mut display_strings = app_names
+                        .into_iter()
+                        .zip(window_titles)
+                        .map(|(app, title)| format!("{app} > {title}"))
+                        .collect::<Vec<String>>();
+                    display_strings.sort();
+                    display_strings.join(" | ")
+                };
+                (tag, display_string)
             })
+            .filter(|(_, display)| !display.is_empty())
+            .map(|(tag, display_string)| format!("{}: {}", tag, display_string))
             .collect();
         if let Ok(MenuMatch::Line(_, choice)) = dmenu.build_menu(entries) {
             extract_tag(&choice)
