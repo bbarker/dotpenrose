@@ -142,8 +142,8 @@ fn raw_key_bindings() -> HashMap<String, Box<dyn KeyEventHandler<RustConn>>> {
         "M-S-space" => modify_with(|cs| cs.previous_layout()),
         "M-S-Up" => send_layout_message(|| IncMain(1)),
         "M-S-Down" => send_layout_message(|| IncMain(-1)),
-        "M-S-Right" => send_layout_message(|| ExpandMain),
-        "M-S-Left" => send_layout_message(|| ShrinkMain),
+        "M-l" => send_layout_message(|| ExpandMain),
+        "M-h" => send_layout_message(|| ShrinkMain),
         "M-Return" => send_layout_message(|| Rotate),
         "M-p" => spawn("dmenu_run"),
         // "M-p" => spawn("yeganesh -x"), // not working for some reason
