@@ -2,6 +2,7 @@
 #![warn(future_incompatible, rust_2024_compatibility)]
 // #![deny(unused_crate_dependencies)]
 pub mod bar;
+pub mod log;
 
 pub const FONT: &str = "Hasklug Nerd Font Mono";
 

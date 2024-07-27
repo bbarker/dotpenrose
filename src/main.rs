@@ -20,7 +20,7 @@ use penrose::{
         util::dmenu::{DMenu, DMenuConfig, DMenuKind, MenuMatch},
     },
     map, stack,
-    x::{Atom, XConn, XConnExt},
+    x::{XConn, XConnExt},
     x11rb::RustConn,
     Result,
 };
@@ -97,44 +97,52 @@ fn goto_workspace_by_apps() -> Box<dyn KeyEventHandler<RustConn>> {
             },
             sc_ix,
         );
-        let entries = state
-            .client_set
-            .workspaces()
-            .map(|ws| {
-                let tag = state
-                    .client_set
-                    .tag_for_workspace_id(ws.id())
-                    .unwrap_or_default();
-                let window_titles = ws
-                    .clients()
-                    .map(|client| xcon.window_title(*client).unwrap_or_default())
-                    .map(|title| title[..20].to_string())
-                    .collect::<Vec<String>>();
-                let app_names = ws
-                    .clients()
-                    .map(|client| xcon.get_prop(*client, "_NET_WM_PID"))
-                    // .map(|prop_res| match prop_res {
-                    //     Ok(Some(penrose::x::Prop::Cardinal(cardinals))) => cardinals
-                    //         .into_iter()
-                    //         .map(|c| c.to_string())
-                    //         .collect::<Vec<String>>()
-                    //         .join(","),
-                    //     _ => String::new(),
-                    // })
-                    .map(|_| "tmp".to_string())
-                    .collect::<Vec<String>>();
-                let display_string = {
-                    let mut display_strings = app_names
-                        .into_iter()
-                        .zip(window_titles)
-                        .map(|(app, title)| format!("{app} > {title}"))
+        let tags_display_strings = {
+            let mut unsorted_tds: Vec<(String, String)> = state
+                .client_set
+                .workspaces()
+                .map(|ws| {
+                    let tag = state
+                        .client_set
+                        .tag_for_workspace_id(ws.id())
+                        .unwrap_or_default();
+                    let window_titles = ws
+                        .clients()
+                        .map(|client| xcon.window_title(*client).unwrap_or_default())
+                        .map(|title| title[..20].to_string())
                         .collect::<Vec<String>>();
-                    display_strings.sort();
-                    display_strings.join(" | ")
-                };
-                (tag, display_string)
-            })
-            .filter(|(_, display)| !display.is_empty())
+                    let app_names = ws
+                        .clients()
+                        .map(|client| xcon.get_prop(*client, "_NET_WM_PID"))
+                        .map(|prop_res| match prop_res {
+                            Ok(Some(penrose::x::Prop::Cardinal(cardinals))) => cardinals
+                                .into_iter()
+                                // .map(|c| c.to_string())
+                                .map(|_| "tmp".to_string())
+                                .collect::<Vec<String>>()
+                                .join(","),
+                            _ => String::new(),
+                        })
+                        //.map(|_| "tmp".to_string())
+                        .collect::<Vec<String>>();
+                    let display_string = {
+                        let display_strings = app_names
+                            .into_iter()
+                            .zip(window_titles)
+                            .map(|(app, title)| format!("{app} > {title}"))
+                            .collect::<Vec<String>>();
+                        display_strings.join(" | ")
+                    };
+                    (tag, display_string)
+                })
+                .filter(|(_, display)| !display.is_empty())
+                .collect();
+            unsorted_tds.sort_by_key(|(tag, _dsp)| tag.parse::<u16>().unwrap_or(999));
+            unsorted_tds // now sorted
+        };
+
+        let entries = tags_display_strings
+            .into_iter()
             .map(|(tag, display_string)| format!("{}: {}", tag, display_string))
             .collect();
         if let Ok(MenuMatch::Line(_, choice)) = dmenu.build_menu(entries) {
