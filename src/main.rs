@@ -28,12 +28,18 @@ use std::collections::HashMap;
 use std::ops::RangeInclusive;
 use tracing_subscriber::util::SubscriberInitExt;
 
-use dotpenrose::bar::{status_bar, BAR_HEIGHT_PX_PRIMARY};
+use sysinfo::{Pid, System};
+
+use dotpenrose::{
+    bar::{status_bar, BAR_HEIGHT_PX_PRIMARY},
+    log::log_penrose,
+};
 
 // Let's start with 29 tags
 const NUM_FAST_ACCESS_WORKSPACES: u16 = 9;
 const WORKSPACES: RangeInclusive<u16> = 1..=(NUM_FAST_ACCESS_WORKSPACES + 20);
 static ALL_TAGS: Lazy<Vec<String>> = Lazy::new(|| WORKSPACES.map(|ix| ix.to_string()).collect());
+static SYSTEM: Lazy<System> = Lazy::new(System::new_all);
 
 fn workspace_menu() -> Box<dyn KeyEventHandler<RustConn>> {
     key_handler(|state, _xcon| {
@@ -117,14 +123,19 @@ fn goto_workspace_by_apps() -> Box<dyn KeyEventHandler<RustConn>> {
                         .map(|prop_res| match prop_res {
                             Ok(Some(penrose::x::Prop::Cardinal(cardinals))) => cardinals
                                 .into_iter()
-                                // .map(|c| c.to_string())
-                                .map(|_| "tmp".to_string())
+                                .map(|pid| {
+                                    if let Some(process) = SYSTEM.process(Pid::from(pid as usize)) {
+                                        process.name().to_string()
+                                    } else {
+                                        String::new()
+                                    }
+                                })
                                 .collect::<Vec<String>>()
                                 .join(","),
                             _ => String::new(),
                         })
-                        //.map(|_| "tmp".to_string())
                         .collect::<Vec<String>>();
+                    log_penrose(&format!("{:?}", app_names)).unwrap_or_default();
                     let display_string = {
                         let display_strings = app_names
                             .into_iter()
