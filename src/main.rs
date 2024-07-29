@@ -41,7 +41,27 @@ const WORKSPACES: RangeInclusive<u16> = 1..=(NUM_FAST_ACCESS_WORKSPACES + 20);
 static ALL_TAGS: Lazy<Vec<String>> = Lazy::new(|| WORKSPACES.map(|ix| ix.to_string()).collect());
 static SYSTEM: Lazy<System> = Lazy::new(System::new_all);
 
-fn workspace_menu() -> Box<dyn KeyEventHandler<RustConn>> {
+#[derive(Clone, Debug)]
+pub struct GotoWorkspaceConfig<'a> {
+    app_name_replacements: Vec<(&'a str, &'a str)>,
+}
+
+impl<'a> Default for GotoWorkspaceConfig<'a> {
+    fn default() -> Self {
+        GotoWorkspaceConfig {
+            app_name_replacements: vec![("-wrapped", ""), (".", "")],
+        }
+    }
+}
+
+static GOTO_WS_CONFIG: Lazy<GotoWorkspaceConfig> = Lazy::new(GotoWorkspaceConfig::default);
+
+type KeyHandler = Box<dyn KeyEventHandler<RustConn>>;
+
+static GOTO_WS: Lazy<Box<dyn Fn() -> KeyHandler + Send + Sync>> =
+    Lazy::new(|| goto_workspace_by_apps(&GOTO_WS_CONFIG));
+
+fn workspace_menu() -> KeyHandler {
     key_handler(|state, _xcon| {
         let sc_ix = state.client_set.current_screen().index();
         let dmenu = DMenu::new(
@@ -60,7 +80,7 @@ fn workspace_menu() -> Box<dyn KeyEventHandler<RustConn>> {
     })
 }
 
-fn send_to_workspace_menu() -> Box<dyn KeyEventHandler<RustConn>> {
+fn send_to_workspace_menu() -> KeyHandler {
     key_handler(|state, _xcon| {
         let sc_ix = state.client_set.current_screen().index();
         let dmenu = DMenu::new(
@@ -80,10 +100,9 @@ fn send_to_workspace_menu() -> Box<dyn KeyEventHandler<RustConn>> {
     })
 }
 
-// TODO: filter out empty workspaces
-// TODO: sort workspaces -> use func-iter, but fix mutability and add test
-//     : in func-iter
-fn goto_workspace_by_apps() -> Box<dyn KeyEventHandler<RustConn>> {
+fn goto_workspace_by_apps(
+    conf: &'static GotoWorkspaceConfig<'static>,
+) -> Box<dyn Fn() -> KeyHandler + Send + Sync> {
     fn extract_tag(str: &str) -> Option<&str> {
         let parts: Vec<_> = str.splitn(2, ':').collect();
         if parts.len() == 2 {
@@ -93,83 +112,102 @@ fn goto_workspace_by_apps() -> Box<dyn KeyEventHandler<RustConn>> {
         }
     }
 
-    key_handler(|state: &mut State<RustConn>, xcon: &RustConn| {
-        let sc_ix = state.client_set.current_screen().index();
-        let dmenu = DMenu::new(
-            &DMenuConfig {
-                kind: DMenuKind::Rust,
-                custom_prompt: Some("workspace> ".to_string()),
-                ..Default::default()
-            },
-            sc_ix,
-        );
-        let tags_display_strings = {
-            let mut unsorted_tds: Vec<(String, String)> = state
-                .client_set
-                .workspaces()
-                .map(|ws| {
-                    let tag = state
-                        .client_set
-                        .tag_for_workspace_id(ws.id())
-                        .unwrap_or_default();
-                    let window_titles = ws
-                        .clients()
-                        .map(|client| xcon.window_title(*client).unwrap_or_default())
-                        .map(|title| title[..20].to_string())
-                        .collect::<Vec<String>>();
-                    let app_names = ws
-                        .clients()
-                        .map(|client| xcon.get_prop(*client, "_NET_WM_PID"))
-                        .map(|prop_res| match prop_res {
-                            Ok(Some(penrose::x::Prop::Cardinal(cardinals))) => cardinals
-                                .into_iter()
-                                .map(|pid| {
-                                    if let Some(process) = SYSTEM.process(Pid::from(pid as usize)) {
-                                        process.name().to_string()
-                                    } else {
-                                        String::new()
-                                    }
-                                })
-                                .collect::<Vec<String>>()
-                                .join(","),
-                            _ => String::new(),
-                        })
-                        .collect::<Vec<String>>();
-                    log_penrose(&format!("{:?}", app_names)).unwrap_or_default();
-                    let display_string = {
-                        let display_strings = app_names
-                            .into_iter()
-                            .zip(window_titles)
-                            .map(|(app, title)| format!("{app} > {title}"))
+    Box::new(|| {
+        key_handler(|state: &mut State<RustConn>, xcon: &RustConn| {
+            let conf_local = conf.clone();
+            let sc_ix = state.client_set.current_screen().index();
+            let dmenu = DMenu::new(
+                &DMenuConfig {
+                    kind: DMenuKind::Rust,
+                    custom_prompt: Some("workspace> ".to_string()),
+                    ..Default::default()
+                },
+                sc_ix,
+            );
+            let tags_display_strings = {
+                let mut unsorted_tds: Vec<(String, String)> = state
+                    .client_set
+                    .workspaces()
+                    .map(|ws| {
+                        let tag = state
+                            .client_set
+                            .tag_for_workspace_id(ws.id())
+                            .unwrap_or_default();
+                        let window_titles = ws
+                            .clients()
+                            .map(|client| xcon.window_title(*client).unwrap_or_default())
+                            .map(|title| title[..20].to_string())
                             .collect::<Vec<String>>();
-                        display_strings.join(" | ")
-                    };
-                    (tag, display_string)
-                })
-                .filter(|(_, display)| !display.is_empty())
-                .collect();
-            unsorted_tds.sort_by_key(|(tag, _dsp)| tag.parse::<u16>().unwrap_or(999));
-            unsorted_tds // now sorted
-        };
+                        let app_names = ws
+                            .clients()
+                            .map(|client| xcon.get_prop(*client, "_NET_WM_PID"))
+                            .map(|prop_res| match prop_res {
+                                Ok(Some(penrose::x::Prop::Cardinal(cardinals))) => cardinals
+                                    .into_iter()
+                                    .map(|pid| {
+                                        if let Some(process) =
+                                            SYSTEM.process(Pid::from(pid as usize))
+                                        {
+                                            let exe_name = process
+                                                .exe()
+                                                .and_then(|exe_path| {
+                                                    std::path::Path::new(exe_path).file_name()
+                                                })
+                                                .map_or_else(
+                                                    || "Unknown".to_string(),
+                                                    |os_str| os_str.to_string_lossy().into_owned(),
+                                                );
+                                            conf_local
+                                                .app_name_replacements
+                                                .iter()
+                                                .fold(exe_name, |pn, (rep, sub)| {
+                                                    pn.replace(rep, sub)
+                                                })
+                                        } else {
+                                            String::new()
+                                        }
+                                    })
+                                    .collect::<Vec<String>>()
+                                    .join(","),
+                                _ => String::new(),
+                            })
+                            .collect::<Vec<String>>();
+                        log_penrose(&format!("{:?}", app_names)).unwrap_or_default();
+                        let display_string = {
+                            let display_strings = app_names
+                                .into_iter()
+                                .zip(window_titles)
+                                .map(|(app, title)| format!("{app} > {title}"))
+                                .collect::<Vec<String>>();
+                            display_strings.join(" | ")
+                        };
+                        (tag, display_string)
+                    })
+                    .filter(|(_, display)| !display.is_empty())
+                    .collect();
+                unsorted_tds.sort_by_key(|(tag, _dsp)| tag.parse::<u16>().unwrap_or(999));
+                unsorted_tds // now sorted
+            };
 
-        let entries = tags_display_strings
-            .into_iter()
-            .map(|(tag, display_string)| format!("{}: {}", tag, display_string))
-            .collect();
-        if let Ok(MenuMatch::Line(_, choice)) = dmenu.build_menu(entries) {
-            extract_tag(&choice)
-                .ok_or(penrose::Error::Custom("No tag for workspace".to_string()))
-                .map(|tag| state.client_set.focus_tag(tag))
-        } else {
-            Ok(())
-        }
+            let entries = tags_display_strings
+                .into_iter()
+                .map(|(tag, display_string)| format!("{}: {}", tag, display_string))
+                .collect();
+            if let Ok(MenuMatch::Line(_, choice)) = dmenu.build_menu(entries) {
+                extract_tag(&choice)
+                    .ok_or(penrose::Error::Custom("No tag for workspace".to_string()))
+                    .map(|tag| state.client_set.focus_tag(tag))
+            } else {
+                Ok(())
+            }
+        })
     })
 }
 
 fn raw_key_bindings() -> HashMap<String, Box<dyn KeyEventHandler<RustConn>>> {
     let action_bindings = map! {
         map_keys: |k: &str| k.to_string();
-        "M-f" => goto_workspace_by_apps(),
+        "M-f" => GOTO_WS(),
         "M-g" => workspace_menu(),
         "M-S-g" => send_to_workspace_menu(),
         "M-n" => modify_with(|cs| cs.focus_down()),
