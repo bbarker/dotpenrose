@@ -25,15 +25,30 @@ use penrose::{
     Result,
 };
 use std::collections::HashMap;
+use std::env;
 use std::ops::RangeInclusive;
 use tracing_subscriber::util::SubscriberInitExt;
 
+use std::process::Command;
 use sysinfo::{Pid, System};
 
 use dotpenrose::{
     bar::{status_bar, BAR_HEIGHT_PX_PRIMARY},
     log::log_penrose,
 };
+
+static HOSTNAME: Lazy<String> =
+    Lazy::new(|| env::var("HOSTNAME").unwrap_or_else(|_| get_hostname()));
+static USERNAME: Lazy<String> =
+    Lazy::new(|| env::var("USER").unwrap_or_else(|_| "Unknown".to_string()));
+static NU_SHELL_LOC: Lazy<String> = Lazy::new(|| format!("{}@{}:", *USERNAME, *HOSTNAME));
+
+fn get_hostname() -> String {
+    Command::new("hostname")
+        .output()
+        .map(|output| String::from_utf8_lossy(&output.stdout).trim().to_string())
+        .unwrap_or_else(|_| "Unknown".to_string())
+}
 
 // Let's start with 29 tags
 const NUM_FAST_ACCESS_WORKSPACES: u16 = 9;
@@ -43,13 +58,16 @@ static SYSTEM: Lazy<System> = Lazy::new(System::new_all);
 
 #[derive(Clone, Debug)]
 pub struct GotoWorkspaceConfig<'a> {
-    app_name_replacements: Vec<(&'a str, &'a str)>,
+    name_substitutions: Vec<(&'a str, &'a str)>,
+    title_substitutions: Vec<(&'a str, &'a str)>,
 }
 
 impl<'a> Default for GotoWorkspaceConfig<'a> {
     fn default() -> Self {
+        log_penrose(&format!("NU_SHELL_LOC = {}", *NU_SHELL_LOC)).unwrap_or_default();
         GotoWorkspaceConfig {
-            app_name_replacements: vec![("-wrapped", ""), (".", "")],
+            name_substitutions: vec![("-wrapped", ""), (".", "")],
+            title_substitutions: vec![(&NU_SHELL_LOC, "local")],
         }
     }
 }
@@ -136,7 +154,16 @@ fn goto_workspace_by_apps(
                         let window_titles = ws
                             .clients()
                             .map(|client| xcon.window_title(*client).unwrap_or_default())
-                            .map(|title| title[..20].to_string())
+                            .map(|title| {
+                                conf_local
+                                    .title_substitutions
+                                    .iter()
+                                    .fold(title, |new_title, (rep, sub)| {
+                                        new_title.replace(rep, sub)
+                                    })
+                                    .trim()
+                                    .to_owned()
+                            })
                             .collect::<Vec<String>>();
                         let app_names = ws
                             .clients()
@@ -158,11 +185,13 @@ fn goto_workspace_by_apps(
                                                     |os_str| os_str.to_string_lossy().into_owned(),
                                                 );
                                             conf_local
-                                                .app_name_replacements
+                                                .name_substitutions
                                                 .iter()
-                                                .fold(exe_name, |pn, (rep, sub)| {
-                                                    pn.replace(rep, sub)
+                                                .fold(exe_name, |en, (rep, sub)| {
+                                                    en.replace(rep, sub)
                                                 })
+                                                .trim()
+                                                .to_owned()
                                         } else {
                                             String::new()
                                         }
@@ -172,12 +201,11 @@ fn goto_workspace_by_apps(
                                 _ => String::new(),
                             })
                             .collect::<Vec<String>>();
-                        log_penrose(&format!("{:?}", app_names)).unwrap_or_default();
                         let display_string = {
                             let display_strings = app_names
                                 .into_iter()
                                 .zip(window_titles)
-                                .map(|(app, title)| format!("{app} > {title}"))
+                                .map(|(app, title)| format!("{app} ➥ {title}"))
                                 .collect::<Vec<String>>();
                             display_strings.join(" | ")
                         };
