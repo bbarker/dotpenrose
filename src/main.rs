@@ -24,6 +24,7 @@ use penrose::{
     x11rb::RustConn,
     Result,
 };
+
 use std::collections::HashMap;
 use std::env;
 use std::ops::RangeInclusive;
@@ -32,11 +33,9 @@ use tracing_subscriber::util::SubscriberInitExt;
 use std::process::Command;
 use sysinfo::{Pid, System};
 
-use dotpenrose::{
-    bar::{status_bar, BAR_HEIGHT_PX_PRIMARY},
-    log::log_penrose,
-};
+use dotpenrose::bar::{status_bar, BAR_HEIGHT_PX_PRIMARY};
 
+// Could possibly use alternatives from the nix crate
 static HOSTNAME: Lazy<String> =
     Lazy::new(|| env::var("HOSTNAME").unwrap_or_else(|_| get_hostname()));
 static USERNAME: Lazy<String> =
@@ -56,23 +55,16 @@ const WORKSPACES: RangeInclusive<u16> = 1..=(NUM_FAST_ACCESS_WORKSPACES + 20);
 static ALL_TAGS: Lazy<Vec<String>> = Lazy::new(|| WORKSPACES.map(|ix| ix.to_string()).collect());
 static SYSTEM: Lazy<System> = Lazy::new(System::new_all);
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct GotoWorkspaceConfig<'a> {
     name_substitutions: Vec<(&'a str, &'a str)>,
     title_substitutions: Vec<(&'a str, &'a str)>,
 }
 
-impl<'a> Default for GotoWorkspaceConfig<'a> {
-    fn default() -> Self {
-        log_penrose(&format!("NU_SHELL_LOC = {}", *NU_SHELL_LOC)).unwrap_or_default();
-        GotoWorkspaceConfig {
-            name_substitutions: vec![("-wrapped", ""), (".", "")],
-            title_substitutions: vec![(&NU_SHELL_LOC, "local")],
-        }
-    }
-}
-
-static GOTO_WS_CONFIG: Lazy<GotoWorkspaceConfig> = Lazy::new(GotoWorkspaceConfig::default);
+static GOTO_WS_CONFIG: Lazy<GotoWorkspaceConfig> = Lazy::new(|| GotoWorkspaceConfig {
+    name_substitutions: vec![("-wrapped", ""), (".", "")],
+    title_substitutions: vec![(&NU_SHELL_LOC, "local")],
+});
 
 type KeyHandler = Box<dyn KeyEventHandler<RustConn>>;
 
