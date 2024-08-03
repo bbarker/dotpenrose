@@ -46,11 +46,27 @@ To run, `startx` from a shell where you have run `nix develop`.
 
 Tested on Pop!_OS
 
+#### Using a login manager
+
+Tested with cosmic-greeter.
+
 ```
-bash-5.2$ pwd
-/usr/share/xsessions
-bash-5.2$ sudo ln -s /home/bbarker/workspace/dotpenrose/penrose.desktop
+bash-5.2$ sudo cp penrose.desktop /usr/share/xsessions/ 
 ```
+
+#### Using startx
+
+Before doing the below, you may need to add yourself to one or more groups,
+but I suggest only doing that if needed (possibly `video`, `input`, `tty`, `wheel`
+etc). 
+
+I did need to edit `/etc/X11/Xwrapper.config` and add:
+
+```
+allowed_users=anybody
+needs_root_rights=yes
+```
+
 
 ### Arch
 Install dependencies (arch):
