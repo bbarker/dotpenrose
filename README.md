@@ -42,6 +42,16 @@ Then follow the configuration section below.
 
 To run, `startx` from a shell where you have run `nix develop`.
 
+### Ubuntu-based
+
+Tested on Pop!_OS
+
+```
+bash-5.2$ pwd
+/usr/share/xsessions
+bash-5.2$ sudo ln -s /home/bbarker/workspace/dotpenrose/penrose.desktop
+```
+
 ### Arch
 Install dependencies (arch):
 

@@ -1,0 +1,6 @@
+[Desktop Entry]
+Encoding=UTF-8
+Name=penrose
+Comment=This session starts penrose
+Exec=env PENROSE_DIR=/home/bbarker/workspace/dotpenrose /home/bbarker/workspace/dotpenrose/run_penrose.sh
+Type=Application

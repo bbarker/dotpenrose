@@ -12,6 +12,7 @@
           pkgs = import nixpkgs {
             inherit system overlays;
           };
+          isNixOS = pkgs.lib.hasPrefix "nixos" pkgs.stdenv.hostPlatform.system;
         in
         with pkgs;
         {
@@ -31,7 +32,7 @@
               gnome.gnome-keyring # TODO: move to home-manager?
 
               rust-analyzer
-
+            ] ++ (if isNixOS then [
               xorg.libX11
               xorg.libXcursor
               xorg.libXrandr
@@ -40,7 +41,7 @@
               xorg.xmodmap
               libglvnd
               xorg.libXft # for penrose_ui
-            ];
+            ] else []);
 
             nativeBuildInputs = [
               pkg-config
@@ -53,15 +54,16 @@
               "-Wl,--pop-state"
             ];
 
-            LD_LIBRARY_PATH = lib.makeLibraryPath [
-              libxkbcommon
-              mesa.drivers
-              vulkan-loader
-              xorg.libX11
-              xorg.libXcursor
-              xorg.libXi
-              xorg.libXrandr
-            ];
+            LD_LIBRARY_PATH = (if isNixOS then 
+              lib.makeLibraryPath [
+                libxkbcommon
+                mesa.drivers
+                vulkan-loader
+                xorg.libX11
+                xorg.libXcursor
+                xorg.libXi
+                xorg.libXrandr
+              ] else []);
 
             shellHook = ''
               # Ideally fonts are installed via the system, but here's
