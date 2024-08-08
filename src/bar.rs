@@ -8,9 +8,12 @@ use penrose::{
 use penrose_ui::{
     bar::{
         widgets::{
-            sys::helpers::battery_file_search,
-            sys::interval::{amixer_volume, battery_summary, current_date_and_time, wifi_network},
-            ActiveWindowName, CurrentLayout, Widget, Workspaces,
+            sys::{
+                helpers::battery_file_search,
+                interval::{amixer_volume, battery_summary, current_date_and_time, wifi_network},
+            },
+            ActiveWindowName, CurrentLayout, DefaultUi, FocusState, Widget, WorkspacesUi,
+            WorkspacesWidget, WsMeta,
         },
         PerScreen, Position, StatusBar,
     },
@@ -32,6 +35,93 @@ pub const BAR_HEIGHT_PX_PRIMARY: u32 = 24;
 pub const BAR_HEIGHT_PX_EXTERNAL: u32 = 18;
 pub const BAR_POINT_SIZE_PRIMARY: u8 = 12;
 pub const BAR_POINT_SIZE_EXTERNAL: u8 = 8;
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct MyWorkspaceUi {
+    fg_1: Color,
+    fg_2: Color,
+    bg_1: Color,
+    bg_2: Color,
+}
+
+impl MyWorkspaceUi {
+    fn new(style: TextStyle, highlight: impl Into<Color>, empty_fg: impl Into<Color>) -> Self {
+        Self {
+            fg_1: style.fg,
+            fg_2: empty_fg.into(),
+            bg_1: highlight.into(),
+            bg_2: style.bg.unwrap_or_else(|| 0x000000.into()),
+        }
+    }
+}
+
+impl WorkspacesUi for MyWorkspaceUi {
+    fn background_color(&self) -> Color {
+        self.bg_2
+    }
+
+    fn colors_for_workspace(
+        &self,
+        &WsMeta { occupied, .. }: &WsMeta,
+        focus_state: FocusState,
+        screen_has_focus: bool,
+    ) -> (Color, Color) {
+        use FocusState::*;
+
+        match focus_state {
+            FocusedOnThisScreen if screen_has_focus && occupied => (self.fg_1, self.bg_1),
+            FocusedOnThisScreen if screen_has_focus => (self.fg_2, self.bg_1),
+            FocusedOnThisScreen => (self.fg_1, self.fg_2),
+            FocusedOnOtherScreen => (self.bg_1, self.fg_2),
+            Unfocused if occupied => (self.fg_1, self.bg_2),
+            Unfocused => (self.fg_2, self.bg_2),
+        }
+    }
+}
+
+// FIXME: experimenting:
+
+impl<U> WorkspacesWidget<U> {
+    /// Construct a new WorkspaceWidget
+    pub fn new(style: TextStyle, highlight: impl Into<Color>, empty_fg: impl Into<Color>) -> Self
+    where
+        U: WorkspacesUi,
+    {
+        let ui = U::new(style, highlight, empty_fg);
+
+        Self {
+            workspaces: vec![],
+            focused_ws: vec![], // set in startup hook
+            extent: None,
+            ui,
+            require_draw: true,
+        }
+    }
+}
+
+// end FIXME
+
+// mod MyWorkspaces {
+//     use super::*;
+
+//     pub type MyWorkspaces = WorkspacesWidget<MyWorkspaceUi>;
+//     /// Construct a new WorkspaceWidget
+//     pub fn new(
+//         style: TextStyle,
+//         highlight: impl Into<Color>,
+//         empty_fg: impl Into<Color>,
+//     ) -> MyWorkspaces {
+//         let ui = MyWorkspaceUi::new(style, highlight, empty_fg);
+
+//         MyWorkspaces {
+//             workspaces: vec![],
+//             focused_ws: vec![], // set in startup hook
+//             extent: None,
+//             ui,
+//             require_draw: true,
+//         }
+//     }
+// }
 
 fn base_widgets<X: XConn>() -> Vec<Box<dyn Widget<X>>> {
     let highlight: Color = BLUE.into();
