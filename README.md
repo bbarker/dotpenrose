@@ -107,3 +107,20 @@ Here are the most important keybindings to control the window manager
 'Meta' + 'Shift' + ['Up', 'Down', 'Left', 'Right'] to change tiling layout
 
 For a complete binding list, check out 'src/main.rs'
+
+
+# Tips
+
+## Development
+
+- Don't run `cargo clean`, ideally (you shouldn't need to anyway, most likely).
+- Related to that, to be extra safe, if you are working on an experimental branch,
+  you could check that out to a different directory, e.g.:
+
+```
+$ git worktree add $HOME/workspace/dotpenrose_dev penrose_issue_302
+```
+
+  You could even start this on a different X server if you wanted to experiment
+  at runtime.
+  

@@ -12,8 +12,8 @@ use penrose_ui::{
                 helpers::battery_file_search,
                 interval::{amixer_volume, battery_summary, current_date_and_time, wifi_network},
             },
-            ActiveWindowName, CurrentLayout, DefaultUi, FocusState, Widget, WorkspacesUi,
-            WorkspacesWidget, WsMeta,
+            ActiveWindowName, CurrentLayout, FocusState, Widget, WorkspacesUi, WorkspacesWidget,
+            WsMeta,
         },
         PerScreen, Position, StatusBar,
     },
@@ -62,66 +62,34 @@ impl WorkspacesUi for MyWorkspaceUi {
 
     fn colors_for_workspace(
         &self,
-        &WsMeta { occupied, .. }: &WsMeta,
+        ws_meta: &WsMeta,
         focus_state: FocusState,
         screen_has_focus: bool,
     ) -> (Color, Color) {
         use FocusState::*;
 
         match focus_state {
-            FocusedOnThisScreen if screen_has_focus && occupied => (self.fg_1, self.bg_1),
+            FocusedOnThisScreen if screen_has_focus && ws_meta.occupied() => (self.fg_1, self.bg_1),
             FocusedOnThisScreen if screen_has_focus => (self.fg_2, self.bg_1),
             FocusedOnThisScreen => (self.fg_1, self.fg_2),
             FocusedOnOtherScreen => (self.bg_1, self.fg_2),
-            Unfocused if occupied => (self.fg_1, self.bg_2),
+            Unfocused if ws_meta.occupied() => (self.fg_1, self.bg_2),
             Unfocused => (self.fg_2, self.bg_2),
         }
     }
 }
 
-// FIXME: experimenting:
+type MyWorkspaces = WorkspacesWidget<MyWorkspaceUi>;
 
-impl<U> WorkspacesWidget<U> {
-    /// Construct a new WorkspaceWidget
-    pub fn new(style: TextStyle, highlight: impl Into<Color>, empty_fg: impl Into<Color>) -> Self
-    where
-        U: WorkspacesUi,
-    {
-        let ui = U::new(style, highlight, empty_fg);
+fn new_workspaces(
+    style: TextStyle,
+    highlight: impl Into<Color>,
+    empty_fg: impl Into<Color>,
+) -> MyWorkspaces {
+    let ui = MyWorkspaceUi::new(style, highlight, empty_fg);
 
-        Self {
-            workspaces: vec![],
-            focused_ws: vec![], // set in startup hook
-            extent: None,
-            ui,
-            require_draw: true,
-        }
-    }
+    WorkspacesWidget::new_with_ui(ui)
 }
-
-// end FIXME
-
-// mod MyWorkspaces {
-//     use super::*;
-
-//     pub type MyWorkspaces = WorkspacesWidget<MyWorkspaceUi>;
-//     /// Construct a new WorkspaceWidget
-//     pub fn new(
-//         style: TextStyle,
-//         highlight: impl Into<Color>,
-//         empty_fg: impl Into<Color>,
-//     ) -> MyWorkspaces {
-//         let ui = MyWorkspaceUi::new(style, highlight, empty_fg);
-
-//         MyWorkspaces {
-//             workspaces: vec![],
-//             focused_ws: vec![], // set in startup hook
-//             extent: None,
-//             ui,
-//             require_draw: true,
-//         }
-//     }
-// }
 
 fn base_widgets<X: XConn>() -> Vec<Box<dyn Widget<X>>> {
     let highlight: Color = BLUE.into();
@@ -141,7 +109,7 @@ fn base_widgets<X: XConn>() -> Vec<Box<dyn Widget<X>>> {
 
     vec![
         Box::new(Wedge::start(BLUE, BLACK)),
-        Box::new(Workspaces::new(style, highlight, empty_ws)),
+        Box::new(new_workspaces(style, highlight, empty_ws)),
         Box::new(CurrentLayout::new(style)),
         Box::new(Wedge::end(BLUE, BLACK).only_with_focus()),
         Box::new(ActiveWindowName::new(
