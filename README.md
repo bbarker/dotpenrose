@@ -117,10 +117,13 @@ For a complete binding list, check out 'src/main.rs'
 - Related to that, to be extra safe, if you are working on an experimental branch,
   you could check that out to a different directory, e.g.:
 
-```
-$ git worktree add $HOME/workspace/dotpenrose_dev penrose_issue_302
-```
+  ```
+  $ git worktree add $HOME/workspace/dotpenrose_dev penrose_issue_302
+  ```
 
   You could even start this on a different X server if you wanted to experiment
   at runtime.
-  
+
+  Or, you can swap out the current binary with the new dev binary by running
+  `./use_dev_penrose.sh` (still need to `pkill dotpenrose` after).
+

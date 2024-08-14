@@ -77,6 +77,13 @@ impl WorkspacesUi for MyWorkspaceUi {
             Unfocused => (self.fg_2, self.bg_2),
         }
     }
+
+    fn ui_tag(&self, workspace_meta: &WsMeta) -> String {
+        match workspace_meta.occupied() {
+            true => workspace_meta.tag().to_string(),
+            false => String::new(),
+        }
+    }
 }
 
 type MyWorkspaces = WorkspacesWidget<MyWorkspaceUi>;
