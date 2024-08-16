@@ -1,4 +1,4 @@
-use crate::{BLACK, BLUE, FONT, GREY, WHITE};
+use crate::{BLACK, BLUE, EMPTY_VEC_STRINGS, FONT, GREY, NUM_WORKSPACES, WHITE};
 use penrose::{
     core::State,
     pure::geometry::{Point, Rect},
@@ -42,6 +42,7 @@ pub struct MyWorkspaceUi {
     fg_2: Color,
     bg_1: Color,
     bg_2: Color,
+    ws_apps: [Vec<String>; NUM_WORKSPACES as usize],
 }
 
 impl MyWorkspaceUi {
@@ -51,11 +52,25 @@ impl MyWorkspaceUi {
             fg_2: empty_fg.into(),
             bg_1: highlight.into(),
             bg_2: style.bg.unwrap_or_else(|| 0x000000.into()),
+            ws_apps: [EMPTY_VEC_STRINGS; NUM_WORKSPACES as usize],
         }
     }
 }
 
 impl WorkspacesUi for MyWorkspaceUi {
+    fn update_from_state<X>(
+        &mut self,
+        workspace_meta: &[WsMeta],
+        focused_tags: &[String],
+        state: &State<X>,
+    ) -> bool
+    where
+        X: XConn,
+    {
+        state.client_set.ordered_tags(); // TODO
+        false
+    }
+
     fn background_color(&self) -> Color {
         self.bg_2
     }
