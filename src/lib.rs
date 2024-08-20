@@ -25,5 +25,3 @@ pub const NUM_WORKSPACES: u16 = NUM_FAST_ACCESS_WORKSPACES + 20;
 pub const WORKSPACES: RangeInclusive<u16> = 1..=(NUM_WORKSPACES);
 pub static ALL_TAGS: Lazy<Vec<String>> =
     Lazy::new(|| WORKSPACES.map(|ix| ix.to_string()).collect());
-
-const EMPTY_VEC_STRINGS: Vec<String> = Vec::<String>::new();

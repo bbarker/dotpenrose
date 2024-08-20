@@ -1,4 +1,7 @@
-use crate::{BLACK, BLUE, EMPTY_VEC_STRINGS, FONT, GREY, NUM_WORKSPACES, WHITE};
+use crate::{
+    workspaces::{workspace_app_info, TagAndAppInfo, SYSTEM},
+    BLACK, BLUE, FONT, GREY, WHITE,
+};
 use penrose::{
     core::State,
     pure::geometry::{Point, Rect},
@@ -37,12 +40,27 @@ pub const BAR_POINT_SIZE_PRIMARY: u8 = 12;
 pub const BAR_POINT_SIZE_EXTERNAL: u8 = 8;
 
 #[derive(Debug, Clone, PartialEq)]
+struct AppInfo {
+    titles: Vec<String>,
+    processes: Vec<String>,
+}
+
+impl From<TagAndAppInfo> for AppInfo {
+    fn from(tag_app_info: TagAndAppInfo) -> Self {
+        Self {
+            titles: tag_app_info.titles,
+            processes: tag_app_info.processes,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub struct MyWorkspaceUi {
     fg_1: Color,
     fg_2: Color,
     bg_1: Color,
     bg_2: Color,
-    ws_apps: [Vec<String>; NUM_WORKSPACES as usize],
+    ws_apps: Vec<AppInfo>,
 }
 
 impl MyWorkspaceUi {
@@ -52,7 +70,7 @@ impl MyWorkspaceUi {
             fg_2: empty_fg.into(),
             bg_1: highlight.into(),
             bg_2: style.bg.unwrap_or_else(|| 0x000000.into()),
-            ws_apps: [EMPTY_VEC_STRINGS; NUM_WORKSPACES as usize],
+            ws_apps: Vec::new(),
         }
     }
 }
@@ -63,11 +81,17 @@ impl WorkspacesUi for MyWorkspaceUi {
         workspace_meta: &[WsMeta],
         focused_tags: &[String],
         state: &State<X>,
+        xcon: &X,
     ) -> bool
     where
         X: XConn,
     {
-        state.client_set.ordered_tags(); // TODO
+        self.ws_apps = state
+            .client_set
+            .workspaces()
+            .map(|ws| workspace_app_info(&SYSTEM, state, xcon, ws).into())
+            .collect();
+        // state.client_set.ordered_tags(); // TODO
         false
     }
 

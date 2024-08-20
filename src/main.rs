@@ -29,11 +29,10 @@ use std::env;
 use tracing_subscriber::util::SubscriberInitExt;
 
 use std::process::Command;
-use sysinfo::System;
 
 use dotpenrose::{
     bar::{status_bar, BAR_HEIGHT_PX_PRIMARY},
-    workspaces::workspace_app_info,
+    workspaces::{workspace_app_info, SYSTEM},
     ALL_TAGS, NUM_FAST_ACCESS_WORKSPACES,
 };
 
@@ -50,8 +49,6 @@ fn get_hostname() -> String {
         .map(|output| String::from_utf8_lossy(&output.stdout).trim().to_string())
         .unwrap_or_else(|_| "Unknown".to_string())
 }
-
-static SYSTEM: Lazy<System> = Lazy::new(System::new_all);
 
 #[derive(Clone, Debug, Default)]
 pub struct GotoWorkspaceConfig<'a> {

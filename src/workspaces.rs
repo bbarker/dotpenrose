@@ -1,34 +1,19 @@
+use once_cell::sync::Lazy;
 use penrose::{
     core::State,
     pure::Workspace,
     x::{XConn, XConnExt},
     Xid,
 };
-use sysinfo::Pid;
+use sysinfo::{Pid, System};
+
+pub static SYSTEM: Lazy<System> = Lazy::new(System::new_all);
 
 pub struct TagAndAppInfo {
     pub tag: String,
     pub titles: Vec<String>,
     pub processes: Vec<String>,
 }
-
-// TODO notes
-// 1. in workspae search, still need to do
-// .map(|title| {
-//     conf_local
-//         .title_substitutions
-//         .iter()
-//         .fold(title, |new_title, (rep, sub)| new_title.replace(rep, sub))
-//         .trim()
-//         .to_owned()
-// })
-// 1. in workspae search, still need to do
-// conf_local
-//     .name_substitutions
-//     .iter()
-//     .fold(exe_name, |en, (rep, sub)| en.replace(rep, sub))
-//     .trim()
-//     .to_owned()
 
 pub fn workspace_app_info<X>(
     system: &sysinfo::System,
