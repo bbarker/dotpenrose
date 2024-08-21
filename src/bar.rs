@@ -1,4 +1,5 @@
 use crate::{
+    log::log_penrose,
     workspaces::{workspace_app_info, TagAndAppInfo, SYSTEM},
     BLACK, BLUE, FONT, GREY, WHITE,
 };
@@ -39,10 +40,31 @@ pub const BAR_HEIGHT_PX_EXTERNAL: u32 = 18;
 pub const BAR_POINT_SIZE_PRIMARY: u8 = 12;
 pub const BAR_POINT_SIZE_EXTERNAL: u8 = 8;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 struct AppInfo {
     titles: Vec<String>,
     processes: Vec<String>,
+}
+
+// TODO: have this be a bit more customizable by
+//     : taking some kind of mapping or config struct
+impl AppInfo {
+    fn iconic_tag(&self, tag: String) -> String {
+        let icon_list = vec![
+            if self.processes.iter().any(|pname| pname.contains("spotify")) {
+                "🎵"
+            } else {
+                ""
+            },
+        ];
+        let icons: String = icon_list.concat();
+
+        if icons.is_empty() {
+            tag
+        } else {
+            format!("[{tag}{icons}]")
+        }
+    }
 }
 
 impl From<TagAndAppInfo> for AppInfo {
@@ -86,13 +108,17 @@ impl WorkspacesUi for MyWorkspaceUi {
     where
         X: XConn,
     {
-        self.ws_apps = state
+        let new_ws_apps = state
             .client_set
             .workspaces()
             .map(|ws| workspace_app_info(&SYSTEM, state, xcon, ws).into())
             .collect();
-        // state.client_set.ordered_tags(); // TODO
-        false
+        if self.ws_apps == new_ws_apps {
+            false
+        } else {
+            self.ws_apps = new_ws_apps;
+            true
+        }
     }
 
     fn background_color(&self) -> Color {
@@ -119,7 +145,20 @@ impl WorkspacesUi for MyWorkspaceUi {
 
     fn ui_tag(&self, workspace_meta: &WsMeta) -> String {
         match workspace_meta.occupied() {
-            true => workspace_meta.tag().to_string(),
+            true => {
+                let tag_string = workspace_meta.tag().to_string();
+                match tag_string.parse::<usize>() {
+                    Ok(ws_ix) => match self.ws_apps.get(ws_ix) {
+                        Some(app_info) => app_info.iconic_tag(tag_string),
+                        None => tag_string,
+                    },
+                    Err(er) => {
+                        log_penrose(&format!("couldn't parse int from {tag_string}, er={er}"))
+                            .unwrap();
+                        tag_string
+                    }
+                }
+            }
             false => String::new(),
         }
     }
