@@ -1,8 +1,9 @@
 use crate::{
-    log::log_penrose,
+    log::*,
     workspaces::{workspace_app_info, TagAndAppInfo, SYSTEM},
     BLACK, BLUE, FONT, GREY, WHITE,
 };
+use do_notation::m;
 use penrose::{
     core::State,
     pure::geometry::{Point, Rect},
@@ -50,6 +51,7 @@ struct AppInfo {
 //     : taking some kind of mapping or config struct
 impl AppInfo {
     fn iconic_tag(&self, tag: String) -> String {
+        log_penrose(&format!("Calling iconic_tag on tag {tag}")).unwrap();
         let icon_list = vec![
             if self.processes.iter().any(|pname| pname.contains("spotify")) {
                 "🎵"
@@ -58,6 +60,7 @@ impl AppInfo {
             },
         ];
         let icons: String = icon_list.concat();
+        log_penrose(&format!("icons for {tag}: {:?}", icons)).unwrap();
 
         if icons.is_empty() {
             tag
@@ -116,6 +119,8 @@ impl WorkspacesUi for MyWorkspaceUi {
         if self.ws_apps == new_ws_apps {
             false
         } else {
+            // DEBUG: remove log line
+            log_penrose(&format!("updating workspace-ui state: {:?}", new_ws_apps)).unwrap();
             self.ws_apps = new_ws_apps;
             true
         }
@@ -147,16 +152,15 @@ impl WorkspacesUi for MyWorkspaceUi {
         match workspace_meta.occupied() {
             true => {
                 let tag_string = workspace_meta.tag().to_string();
-                match tag_string.parse::<usize>() {
-                    Ok(ws_ix) => match self.ws_apps.get(ws_ix) {
-                        Some(app_info) => app_info.iconic_tag(tag_string),
-                        None => tag_string,
-                    },
-                    Err(er) => {
-                        log_penrose(&format!("couldn't parse int from {tag_string}, er={er}"))
-                            .unwrap();
-                        tag_string
-                    }
+                match m! {
+                    tag_num <- tag_string.parse::<usize>()
+                      .log_err(&format!("couldn't parse int from {tag_string}"));
+                    ws_ix <- tag_num.checked_sub(1)
+                      .log_err(&format!("In ui_tag: couldn't subtract 1 from {tag_num}"));
+                    self.ws_apps.get(ws_ix)
+                } {
+                    Some(app_info) => app_info.iconic_tag(tag_string),
+                    None => tag_string,
                 }
             }
             false => String::new(),
