@@ -49,23 +49,54 @@ struct AppInfo {
 
 // TODO: have this be a bit more customizable by
 //     : taking some kind of mapping or config struct
+struct AppConfig {
+    titles: Vec<(String, String)>,
+    processes: Vec<(String, String)>,
+}
+
+impl Default for AppConfig {
+    fn default() -> Self {
+        AppConfig {
+            titles: Vec::new(),
+            processes: [("spotify", "🎵"), ("firefox", "🦊")]
+                .iter()
+                .map(|(key, val)| (key.to_string(), val.to_string()))
+                .collect(),
+        }
+    }
+}
+
+static APP_CONFIG: Lazy<AppConfig> = Lazy::new(|| AppConfig::default());
+
 impl AppInfo {
     fn iconic_tag(&self, tag: String) -> String {
-        log_penrose(&format!("Calling iconic_tag on tag {tag}")).unwrap();
-        let icon_list = vec![
-            if self.processes.iter().any(|pname| pname.contains("spotify")) {
-                "🎵"
-            } else {
-                ""
-            },
-        ];
+        // let icon_list = vec![
+        //     if self.processes.iter().any(|pname| pname.contains("spotify")) {
+        //         "🎵"
+        //     } else {
+        //         ""
+        //     },
+        //     // \udb81\udd9f
+        // ];
+        let icon_list: Vec<String> = APP_CONFIG
+            .processes
+            .iter()
+            .map(|(proc, icon)| {
+                {
+                    if self.processes.iter().any(|pname| pname.contains(proc)) {
+                        icon
+                    } else {
+                        ""
+                    }
+                }
+                .to_string()
+            })
+            .collect();
         let icons: String = icon_list.concat();
-        log_penrose(&format!("icons for {tag}: {:?}", icons)).unwrap();
-
         if icons.is_empty() {
             tag
         } else {
-            format!("[{tag}{icons}]")
+            format!("{tag}{icons}")
         }
     }
 }
@@ -113,14 +144,12 @@ impl WorkspacesUi for MyWorkspaceUi {
     {
         let new_ws_apps = state
             .client_set
-            .workspaces()
+            .ordered_workspaces()
             .map(|ws| workspace_app_info(&SYSTEM, state, xcon, ws).into())
             .collect();
         if self.ws_apps == new_ws_apps {
             false
         } else {
-            // DEBUG: remove log line
-            log_penrose(&format!("updating workspace-ui state: {:?}", new_ws_apps)).unwrap();
             self.ws_apps = new_ws_apps;
             true
         }
