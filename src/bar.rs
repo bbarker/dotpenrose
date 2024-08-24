@@ -1,4 +1,9 @@
-use crate::{BLACK, BLUE, FONT, GREY, WHITE};
+use crate::{
+    log::*,
+    workspaces::{workspace_app_info, TagAndAppInfo, SYSTEM},
+    BLACK, BLUE, FONT, GREY, WHITE,
+};
+use do_notation::m;
 use penrose::{
     core::State,
     pure::geometry::{Point, Rect},
@@ -8,9 +13,12 @@ use penrose::{
 use penrose_ui::{
     bar::{
         widgets::{
-            sys::helpers::battery_file_search,
-            sys::interval::{amixer_volume, battery_summary, current_date_and_time, wifi_network},
-            ActiveWindowName, CurrentLayout, Widget, Workspaces,
+            sys::{
+                helpers::battery_file_search,
+                interval::{amixer_volume, battery_summary, current_date_and_time, wifi_network},
+            },
+            ActiveWindowName, CurrentLayout, FocusState, Widget, WorkspacesUi, WorkspacesWidget,
+            WsMeta,
         },
         PerScreen, Position, StatusBar,
     },
@@ -33,6 +41,174 @@ pub const BAR_HEIGHT_PX_EXTERNAL: u32 = 18;
 pub const BAR_POINT_SIZE_PRIMARY: u8 = 12;
 pub const BAR_POINT_SIZE_EXTERNAL: u8 = 8;
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct AppInfo {
+    titles: Vec<String>,
+    processes: Vec<String>,
+}
+
+// TODO: have this be a bit more customizable by
+//     : taking some kind of mapping or config struct
+struct AppConfig {
+    titles: Vec<(String, String)>,
+    processes: Vec<(String, String)>,
+}
+
+impl Default for AppConfig {
+    fn default() -> Self {
+        AppConfig {
+            titles: Vec::new(),
+            processes: [("spotify", "🎵"), ("firefox", "🦊")]
+                .iter()
+                .map(|(key, val)| (key.to_string(), val.to_string()))
+                .collect(),
+        }
+    }
+}
+
+static APP_CONFIG: Lazy<AppConfig> = Lazy::new(|| AppConfig::default());
+
+impl AppInfo {
+    fn iconic_tag(&self, tag: String) -> String {
+        // let icon_list = vec![
+        //     if self.processes.iter().any(|pname| pname.contains("spotify")) {
+        //         "🎵"
+        //     } else {
+        //         ""
+        //     },
+        //     // \udb81\udd9f
+        // ];
+        let icon_list: Vec<String> = APP_CONFIG
+            .processes
+            .iter()
+            .map(|(proc, icon)| {
+                {
+                    if self.processes.iter().any(|pname| pname.contains(proc)) {
+                        icon
+                    } else {
+                        ""
+                    }
+                }
+                .to_string()
+            })
+            .collect();
+        let icons: String = icon_list.concat();
+        if icons.is_empty() {
+            tag
+        } else {
+            format!("{tag}{icons}")
+        }
+    }
+}
+
+impl From<TagAndAppInfo> for AppInfo {
+    fn from(tag_app_info: TagAndAppInfo) -> Self {
+        Self {
+            titles: tag_app_info.titles,
+            processes: tag_app_info.processes,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct MyWorkspaceUi {
+    fg_1: Color,
+    fg_2: Color,
+    bg_1: Color,
+    bg_2: Color,
+    ws_apps: Vec<AppInfo>,
+}
+
+impl MyWorkspaceUi {
+    fn new(style: TextStyle, highlight: impl Into<Color>, empty_fg: impl Into<Color>) -> Self {
+        Self {
+            fg_1: style.fg,
+            fg_2: empty_fg.into(),
+            bg_1: highlight.into(),
+            bg_2: style.bg.unwrap_or_else(|| 0x000000.into()),
+            ws_apps: Vec::new(),
+        }
+    }
+}
+
+impl WorkspacesUi for MyWorkspaceUi {
+    fn update_from_state<X>(
+        &mut self,
+        workspace_meta: &[WsMeta],
+        focused_tags: &[String],
+        state: &State<X>,
+        xcon: &X,
+    ) -> bool
+    where
+        X: XConn,
+    {
+        let new_ws_apps = state
+            .client_set
+            .ordered_workspaces()
+            .map(|ws| workspace_app_info(&SYSTEM, state, xcon, ws).into())
+            .collect();
+        if self.ws_apps == new_ws_apps {
+            false
+        } else {
+            self.ws_apps = new_ws_apps;
+            true
+        }
+    }
+
+    fn background_color(&self) -> Color {
+        self.bg_2
+    }
+
+    fn colors_for_workspace(
+        &self,
+        ws_meta: &WsMeta,
+        focus_state: FocusState,
+        screen_has_focus: bool,
+    ) -> (Color, Color) {
+        use FocusState::*;
+
+        match focus_state {
+            FocusedOnThisScreen if screen_has_focus && ws_meta.occupied() => (self.fg_1, self.bg_1),
+            FocusedOnThisScreen if screen_has_focus => (self.fg_2, self.bg_1),
+            FocusedOnThisScreen => (self.fg_1, self.fg_2),
+            FocusedOnOtherScreen => (self.bg_1, self.fg_2),
+            Unfocused if ws_meta.occupied() => (self.fg_1, self.bg_2),
+            Unfocused => (self.fg_2, self.bg_2),
+        }
+    }
+
+    fn ui_tag(&self, workspace_meta: &WsMeta) -> String {
+        match workspace_meta.occupied() {
+            true => {
+                let tag_string = workspace_meta.tag().to_string();
+                match m! {
+                    tag_num <- tag_string.parse::<usize>()
+                      .log_err(&format!("couldn't parse int from {tag_string}"));
+                    ws_ix <- tag_num.checked_sub(1)
+                      .log_err(&format!("In ui_tag: couldn't subtract 1 from {tag_num}"));
+                    self.ws_apps.get(ws_ix)
+                } {
+                    Some(app_info) => app_info.iconic_tag(tag_string),
+                    None => tag_string,
+                }
+            }
+            false => String::new(),
+        }
+    }
+}
+
+type MyWorkspaces = WorkspacesWidget<MyWorkspaceUi>;
+
+fn new_workspaces(
+    style: TextStyle,
+    highlight: impl Into<Color>,
+    empty_fg: impl Into<Color>,
+) -> MyWorkspaces {
+    let ui = MyWorkspaceUi::new(style, highlight, empty_fg);
+
+    WorkspacesWidget::new_with_ui(ui)
+}
+
 fn base_widgets<X: XConn>() -> Vec<Box<dyn Widget<X>>> {
     let highlight: Color = BLUE.into();
     let empty_ws: Color = GREY.into();
@@ -51,7 +227,7 @@ fn base_widgets<X: XConn>() -> Vec<Box<dyn Widget<X>>> {
 
     vec![
         Box::new(Wedge::start(BLUE, BLACK)),
-        Box::new(Workspaces::new(style, highlight, empty_ws)),
+        Box::new(new_workspaces(style, highlight, empty_ws)),
         Box::new(CurrentLayout::new(style)),
         Box::new(Wedge::end(BLUE, BLACK).only_with_focus()),
         Box::new(ActiveWindowName::new(

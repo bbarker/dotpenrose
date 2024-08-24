@@ -20,20 +20,21 @@ use penrose::{
         util::dmenu::{DMenu, DMenuConfig, DMenuKind, MenuMatch},
     },
     map, stack,
-    x::{XConn, XConnExt},
     x11rb::RustConn,
     Result,
 };
 
 use std::collections::HashMap;
 use std::env;
-use std::ops::RangeInclusive;
 use tracing_subscriber::util::SubscriberInitExt;
 
 use std::process::Command;
-use sysinfo::{Pid, System};
 
-use dotpenrose::bar::{status_bar, BAR_HEIGHT_PX_PRIMARY};
+use dotpenrose::{
+    bar::{status_bar, BAR_HEIGHT_PX_PRIMARY},
+    workspaces::{workspace_app_info, SYSTEM},
+    ALL_TAGS, NUM_FAST_ACCESS_WORKSPACES,
+};
 
 // Could possibly use alternatives from the nix crate
 static HOSTNAME: Lazy<String> =
@@ -48,12 +49,6 @@ fn get_hostname() -> String {
         .map(|output| String::from_utf8_lossy(&output.stdout).trim().to_string())
         .unwrap_or_else(|_| "Unknown".to_string())
 }
-
-// Let's start with 29 tags
-const NUM_FAST_ACCESS_WORKSPACES: u16 = 9;
-const WORKSPACES: RangeInclusive<u16> = 1..=(NUM_FAST_ACCESS_WORKSPACES + 20);
-static ALL_TAGS: Lazy<Vec<String>> = Lazy::new(|| WORKSPACES.map(|ix| ix.to_string()).collect());
-static SYSTEM: Lazy<System> = Lazy::new(System::new_all);
 
 #[derive(Clone, Debug, Default)]
 pub struct GotoWorkspaceConfig<'a> {
@@ -135,17 +130,13 @@ fn goto_workspace_by_apps(
                 sc_ix,
             );
             let tags_display_strings = {
-                let mut unsorted_tds: Vec<(String, String)> = state
-                    .client_set
-                    .workspaces()
+                let workspaces = state.client_set.workspaces();
+                let mut unsorted_tds: Vec<(String, String)> = workspaces
                     .map(|ws| {
-                        let tag = state
-                            .client_set
-                            .tag_for_workspace_id(ws.id())
-                            .unwrap_or_default();
-                        let window_titles = ws
-                            .clients()
-                            .map(|client| xcon.window_title(*client).unwrap_or_default())
+                        let ws_app_info = workspace_app_info(&SYSTEM, state, xcon, ws);
+                        let window_titles = ws_app_info
+                            .titles
+                            .into_iter()
                             .map(|title| {
                                 conf_local
                                     .title_substitutions
@@ -157,42 +148,14 @@ fn goto_workspace_by_apps(
                                     .to_owned()
                             })
                             .collect::<Vec<String>>();
-                        let app_names = ws
-                            .clients()
-                            .map(|client| xcon.get_prop(*client, "_NET_WM_PID"))
-                            .map(|prop_res| match prop_res {
-                                Ok(Some(penrose::x::Prop::Cardinal(cardinals))) => cardinals
-                                    .into_iter()
-                                    .map(|pid| {
-                                        if let Some(process) =
-                                            SYSTEM.process(Pid::from(pid as usize))
-                                        {
-                                            let exe_name = process
-                                                .exe()
-                                                .and_then(|exe_path| {
-                                                    std::path::Path::new(exe_path).file_name()
-                                                })
-                                                .map_or_else(
-                                                    || "Unknown".to_string(),
-                                                    |os_str| os_str.to_string_lossy().into_owned(),
-                                                );
-                                            conf_local
-                                                .name_substitutions
-                                                .iter()
-                                                .fold(exe_name, |en, (rep, sub)| {
-                                                    en.replace(rep, sub)
-                                                })
-                                                .trim()
-                                                .to_owned()
-                                        } else {
-                                            String::new()
-                                        }
-                                    })
-                                    .collect::<Vec<String>>()
-                                    .join(","),
-                                _ => String::new(),
-                            })
-                            .collect::<Vec<String>>();
+                        let app_names = ws_app_info.processes.into_iter().map(|exe_name| {
+                            conf_local
+                                .name_substitutions
+                                .iter()
+                                .fold(exe_name, |en, (rep, sub)| en.replace(rep, sub))
+                                .trim()
+                                .to_owned()
+                        });
                         let display_string = {
                             let display_strings = app_names
                                 .into_iter()
@@ -201,7 +164,7 @@ fn goto_workspace_by_apps(
                                 .collect::<Vec<String>>();
                             display_strings.join(" | ")
                         };
-                        (tag, display_string)
+                        (ws_app_info.tag, display_string)
                     })
                     .filter(|(_, display)| !display.is_empty())
                     .collect();
