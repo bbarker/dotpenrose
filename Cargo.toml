@@ -8,9 +8,9 @@ publish = false
 readme = "README.md"
 
 [dependencies]
-penrose = { git = "https://github.com/sminez/penrose.git", rev = "b44be08", features = ["keysyms", "serde"] }
+penrose = { git = "https://github.com/sminez/penrose.git", rev = "ab9eeb6", features = ["keysyms", "serde"] }
 # penrose = { path = "../penrose", features = ["keysyms", "serde"] }
-penrose_ui = { git = "https://github.com/sminez/penrose.git", rev = "b44be08" }
+penrose_ui = { git = "https://github.com/sminez/penrose.git", rev = "ab9eeb6" }
 # penrose_ui = { path = "../penrose/crates/penrose_ui" }
 tracing-subscriber = { version = "^0.3", features = ["env-filter"] }
 # func-iter = "0.1.0"
