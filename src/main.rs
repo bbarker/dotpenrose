@@ -207,7 +207,7 @@ fn raw_key_bindings() -> HashMap<String, Box<dyn KeyEventHandler<RustConn>>> {
         "M-S-Down" => send_layout_message(|| IncMain(-1)),
         "M-l" => send_layout_message(|| ExpandMain),
         "M-h" => send_layout_message(|| ShrinkMain),
-        "M-Return" => send_layout_message(|| Rotate),
+        "M-Return" => modify_with(|cs| cs.swap_focus_and_head()),
         "M-p" => spawn("dmenu_run"),
         // "M-p" => spawn("yeganesh -x"), // not working for some reason
         "M-S-Return" => spawn("alacritty"),
