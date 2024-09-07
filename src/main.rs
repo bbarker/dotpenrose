@@ -1,17 +1,19 @@
 #![allow(clippy::unit_arg)]
 
+use nunny::NonEmpty;
 use once_cell::sync::Lazy;
 use penrose::{
     builtin::{
         actions::{exit, key_handler, modify_with, send_layout_message, spawn},
         layout::{
-            messages::{ExpandMain, IncMain, Rotate, ShrinkMain},
+            messages::{ExpandMain, IncMain, ShrinkMain},
             transformers::ReserveTop,
             MainAndStack,
         },
     },
     core::{
         bindings::{parse_keybindings_with_xmodmap, KeyEventHandler},
+        hooks::StateHook,
         layout::LayoutStack,
         Config, State, WindowManager,
     },
@@ -32,6 +34,7 @@ use std::process::Command;
 
 use dotpenrose::{
     bar::{status_bar, BAR_HEIGHT_PX_PRIMARY},
+    is_in_path, is_running,
     workspaces::{workspace_app_info, SYSTEM},
     ALL_TAGS, NUM_FAST_ACCESS_WORKSPACES,
 };
@@ -210,6 +213,7 @@ fn raw_key_bindings() -> HashMap<String, Box<dyn KeyEventHandler<RustConn>>> {
         "M-Return" => modify_with(|cs| cs.swap_focus_and_head()),
         "M-p" => spawn("dmenu_run"),
         // "M-p" => spawn("yeganesh -x"), // not working for some reason
+        "M-S-z" => spawn("xscreensaver-command -lock"),
         "M-S-Return" => spawn("alacritty"),
         "M-A-Escape" => exit(),
     };
@@ -243,12 +247,28 @@ fn main() -> Result<()> {
         .finish()
         .init();
 
+    let startup_progs: NonEmpty<[(&str, &str); 2]> = nunny::array![
+        ("xscreensaver", ""),
+        ("nvidia-settings", "--load-config-only"),
+    ];
+
+    let progs_to_start: Vec<(&str, &str)> = startup_progs
+        .into_iter()
+        .filter(|(prog, _)| is_in_path(prog) && !is_running(prog))
+        .collect();
+    let startup_hook = progs_to_start
+        .into_iter()
+        .map(
+            |(prog, args)| SpawnOnStartup::boxed(format!("{prog} {args}").trim().to_owned()), // .reduce(|ha, hi| ha.then(hi))
+        )
+        .collect::<Vec<_>>();
+
     let conn = RustConn::new()?;
     let key_bindings = parse_keybindings_with_xmodmap(raw_key_bindings())?;
     let config = add_ewmh_hooks(Config {
         default_layouts: layout(),
         tags: ALL_TAGS.clone(),
-        // startup_hook: Some(SpawnOnStartup::boxed("polybar")),
+        startup_hook: Some(StateHook::boxed(startup_hook)),
         ..Default::default()
     });
 
