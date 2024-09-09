@@ -1,16 +1,12 @@
 [package]
-name = "dotpenrose"
+name = "penrose_bbarker_contrib"
 version = "0.1.0"
-authors = ["MathisWellmann <wellmannmathis@gmail.com>", "Brandon Barker <brandon.barker@gmail.com>"]
+authors = ["Brandon Barker <brandon.barker@gmail.com>"]
 edition = "2021"
-license = "GNU AGPLv3-or-later"
-publish = false
+license = "MPL-2.0"
+publish = true
 readme = "README.md"
 
-[workspace]
-members = [
-  "crates/penrose_bbarker_contrib"
-]
 
 [dependencies]
 # penrose = { version = "0.3.6", features = ["keysyms", "serde"] }
@@ -18,14 +14,13 @@ penrose = { git = "https://github.com/sminez/penrose.git", rev = "331a081", feat
 # penrose = { path = "../penrose", features = ["keysyms", "serde"] }
 # penrose_ui = { version = "0.3.6" }
 penrose_ui = { git = "https://github.com/sminez/penrose.git", rev = "331a081" }
-penrose_bbarker_contrib = { version = "0.1.0", path = "crates/penrose_bbarker_contrib" }
 # penrose_ui = { path = "../penrose/crates/penrose_ui" }
-tracing-subscriber = { version = "^0.3", features = ["env-filter"] }
+#tracing-subscriber = { version = "^0.3", features = ["env-filter"] }
 # func-iter = "0.1.0"
-once_cell = "1.19.0"
+#once_cell = "1.19.0"
 sysinfo = "0.30.13"
 do-notation = "0.1.3"
-nunny = "0.2.1"
+#nunny = "0.2.1"
 
 [profile.release]
 lto = "fat"

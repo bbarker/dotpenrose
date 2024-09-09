@@ -3,7 +3,6 @@
 
 use once_cell::sync::Lazy;
 use std::ops::RangeInclusive;
-use std::process::Command;
 // #![deny(unused_crate_dependencies)]
 pub mod bar;
 pub mod log;
@@ -26,23 +25,3 @@ pub const NUM_WORKSPACES: u16 = NUM_FAST_ACCESS_WORKSPACES + 20;
 pub const WORKSPACES: RangeInclusive<u16> = 1..=(NUM_WORKSPACES);
 pub static ALL_TAGS: Lazy<Vec<String>> =
     Lazy::new(|| WORKSPACES.map(|ix| ix.to_string()).collect());
-
-pub fn is_running(program: &str) -> bool {
-    let output = Command::new("bash")
-        .arg("-c")
-        .arg(format!("ps -ef | grep {} | grep -v grep", program))
-        .output()
-        .unwrap();
-
-    !output.stdout.is_empty()
-}
-
-pub fn is_in_path(program: &str) -> bool {
-    let output = Command::new("bash")
-        .arg("-c")
-        .arg(format!("type {}", program))
-        .output()
-        .unwrap();
-
-    output.status.success()
-}

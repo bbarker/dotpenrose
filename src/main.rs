@@ -25,6 +25,7 @@ use penrose::{
     x11rb::RustConn,
     Result,
 };
+use penrose_bbarker_contrib::{is_in_path, is_running};
 
 use std::collections::HashMap;
 use std::env;
@@ -34,7 +35,6 @@ use std::process::Command;
 
 use dotpenrose::{
     bar::{status_bar, BAR_HEIGHT_PX_PRIMARY},
-    is_in_path, is_running,
     workspaces::{workspace_app_info, SYSTEM},
     ALL_TAGS, NUM_FAST_ACCESS_WORKSPACES,
 };
