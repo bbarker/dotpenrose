@@ -1,6 +1,7 @@
 #![warn(clippy::all)]
 #![warn(future_incompatible, rust_2024_compatibility)]
 
+pub mod log;
 use std::process::Command;
 // #![deny(unused_crate_dependencies)]
 

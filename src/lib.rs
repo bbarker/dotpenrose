@@ -5,7 +5,6 @@ use once_cell::sync::Lazy;
 use std::ops::RangeInclusive;
 // #![deny(unused_crate_dependencies)]
 pub mod bar;
-pub mod log;
 pub mod workspaces;
 
 pub const FONT: &str = "Hasklug Nerd Font Mono";

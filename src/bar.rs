@@ -1,5 +1,4 @@
 use crate::{
-    log::*,
     workspaces::{workspace_app_info, TagAndAppInfo, SYSTEM},
     BLACK, BLUE, FONT, GREY, WHITE,
 };
@@ -10,6 +9,7 @@ use penrose::{
     x::XConn,
     Color,
 };
+use penrose_bbarker_contrib::log::LogPenroseError;
 use penrose_ui::{
     bar::{
         widgets::{
