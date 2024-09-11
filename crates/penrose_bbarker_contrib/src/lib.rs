@@ -2,6 +2,7 @@
 #![warn(future_incompatible, rust_2024_compatibility)]
 
 pub mod log;
+pub mod workspaces;
 use std::process::Command;
 // #![deny(unused_crate_dependencies)]
 

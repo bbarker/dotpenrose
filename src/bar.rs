@@ -1,7 +1,4 @@
-use crate::{
-    workspaces::{workspace_app_info, TagAndAppInfo, SYSTEM},
-    BLACK, BLUE, FONT, GREY, WHITE,
-};
+use crate::{BLACK, BLUE, FONT, GREY, WHITE};
 use do_notation::m;
 use penrose::{
     core::State,
@@ -9,7 +6,10 @@ use penrose::{
     x::XConn,
     Color,
 };
-use penrose_bbarker_contrib::log::LogPenroseError;
+use penrose_bbarker_contrib::{
+    log::LogPenroseError,
+    workspaces::{workspace_app_info, TagAndAppInfo, SYSTEM},
+};
 use penrose_ui::{
     bar::{
         widgets::{

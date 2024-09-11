@@ -15,3 +15,10 @@ See log.rs and [this blog post](https://bbarker.unison-services.cloud/s/bbblog/p
 it is opinionated in the sense that it currently has no way to configure
 it to log anywhere other than `$HOME/.penrose.log`, but this could likely
 be changed if there is interest.
+
+
+## Workspaces
+
+See workspaces.rs for utilities relating to workspaces, such as retrieving
+workspace apps.
+
