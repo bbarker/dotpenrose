@@ -8,7 +8,8 @@ use penrose::{
 };
 use penrose_bbarker_contrib::{
     log::LogPenroseError,
-    workspaces::{workspace_app_info, TagAndAppInfo, SYSTEM},
+    workspaces::{workspace_app_info, TagAndAppInfo},
+    SYSTEM,
 };
 use penrose_ui::{
     bar::{

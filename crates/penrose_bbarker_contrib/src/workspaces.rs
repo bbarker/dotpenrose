@@ -1,13 +1,10 @@
-use once_cell::sync::Lazy;
 use penrose::{
     core::State,
     pure::Workspace,
     x::{XConn, XConnExt},
     Xid,
 };
-use sysinfo::{Pid, System};
-
-pub static SYSTEM: Lazy<System> = Lazy::new(System::new_all);
+use sysinfo::Pid;
 
 pub struct TagAndAppInfo {
     pub tag: String,
