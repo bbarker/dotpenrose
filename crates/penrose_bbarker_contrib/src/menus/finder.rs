@@ -37,6 +37,8 @@ pub static GOTO_WS_CONFIG: Lazy<GotoWorkspaceConfig> = Lazy::new(|| GotoWorkspac
     title_substitutions: vec![(&NU_SHELL_LOC, "local")],
 });
 
+/// Navigate to a workspace by typing part of a process name
+/// or window title running on the workspace.
 pub fn goto_workspace_by_apps(
     conf: &'static GotoWorkspaceConfig<'static>,
 ) -> Box<dyn Fn() -> KeyHandler + Send + Sync> {
@@ -116,5 +118,52 @@ pub fn goto_workspace_by_apps(
                 Ok(())
             }
         })
+    })
+}
+
+/// Got a lot of workspaces? This function, and its sister function,
+/// `send_to_workspace_menu`, can help you navigate to them using
+/// a dmenu.
+pub fn workspace_menu() -> KeyHandler {
+    key_handler(|state, _xcon| {
+        let sc_ix = state.client_set.current_screen().index();
+        let dmenu = DMenu::new(
+            &DMenuConfig {
+                kind: DMenuKind::Rust,
+                custom_prompt: Some("workspace> ".to_string()),
+                ..Default::default()
+            },
+            sc_ix,
+        );
+        let all_tags = state.client_set.ordered_tags();
+        if let Ok(MenuMatch::Line(_, choice)) = dmenu.build_menu(all_tags) {
+            Ok(state.client_set.focus_tag(choice))
+        } else {
+            Ok(())
+        }
+    })
+}
+
+/// Got a lot of workspaces? This function, and its sister function,
+/// `workspace_menu`, can help you navigate to them using
+/// a dmenu.
+pub fn send_to_workspace_menu() -> KeyHandler {
+    key_handler(|state, _xcon| {
+        let sc_ix = state.client_set.current_screen().index();
+        let dmenu = DMenu::new(
+            &DMenuConfig {
+                kind: DMenuKind::Rust,
+                show_on_bottom: true,
+                custom_prompt: Some("send to> ".to_string()),
+                ..Default::default()
+            },
+            sc_ix,
+        );
+        let all_tags = state.client_set.ordered_tags();
+        if let Ok(MenuMatch::Line(_, choice)) = dmenu.build_menu(all_tags) {
+            Ok(state.client_set.move_focused_to_tag(choice))
+        } else {
+            Ok(())
+        }
     })
 }

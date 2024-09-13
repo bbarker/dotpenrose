@@ -1,4 +1,5 @@
 #![warn(clippy::all)]
+#![allow(clippy::unit_arg)]
 #![warn(future_incompatible, rust_2024_compatibility)]
 
 pub mod log;

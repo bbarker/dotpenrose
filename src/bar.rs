@@ -67,7 +67,7 @@ impl Default for AppConfig {
     }
 }
 
-static APP_CONFIG: Lazy<AppConfig> = Lazy::new(|| AppConfig::default());
+static APP_CONFIG: Lazy<AppConfig> = Lazy::new(AppConfig::default);
 
 impl AppInfo {
     fn iconic_tag(&self, tag: String) -> String {

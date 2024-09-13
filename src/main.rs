@@ -4,7 +4,7 @@ use nunny::NonEmpty;
 use once_cell::sync::Lazy;
 use penrose::{
     builtin::{
-        actions::{exit, key_handler, modify_with, send_layout_message, spawn},
+        actions::{exit, modify_with, send_layout_message, spawn},
         layout::{
             messages::{ExpandMain, IncMain, ShrinkMain},
             transformers::ReserveTop,
@@ -17,17 +17,16 @@ use penrose::{
         layout::LayoutStack,
         Config, WindowManager,
     },
-    extensions::{
-        hooks::{add_ewmh_hooks, SpawnOnStartup},
-        util::dmenu::{DMenu, DMenuConfig, DMenuKind, MenuMatch},
-    },
+    extensions::hooks::{add_ewmh_hooks, SpawnOnStartup},
     map, stack,
     x11rb::RustConn,
     Result,
 };
 use penrose_bbarker_contrib::{
     is_in_path, is_running,
-    menus::finder::{goto_workspace_by_apps, GOTO_WS_CONFIG},
+    menus::finder::{
+        goto_workspace_by_apps, send_to_workspace_menu, workspace_menu, GOTO_WS_CONFIG,
+    },
     KeyHandler,
 };
 
@@ -41,45 +40,6 @@ use dotpenrose::{
 
 static GOTO_WS: Lazy<Box<dyn Fn() -> KeyHandler + Send + Sync>> =
     Lazy::new(|| goto_workspace_by_apps(&GOTO_WS_CONFIG));
-
-fn workspace_menu() -> KeyHandler {
-    key_handler(|state, _xcon| {
-        let sc_ix = state.client_set.current_screen().index();
-        let dmenu = DMenu::new(
-            &DMenuConfig {
-                kind: DMenuKind::Rust,
-                custom_prompt: Some("workspace> ".to_string()),
-                ..Default::default()
-            },
-            sc_ix,
-        );
-        if let Ok(MenuMatch::Line(_, choice)) = dmenu.build_menu(ALL_TAGS.clone()) {
-            Ok(state.client_set.focus_tag(choice))
-        } else {
-            Ok(())
-        }
-    })
-}
-
-fn send_to_workspace_menu() -> KeyHandler {
-    key_handler(|state, _xcon| {
-        let sc_ix = state.client_set.current_screen().index();
-        let dmenu = DMenu::new(
-            &DMenuConfig {
-                kind: DMenuKind::Rust,
-                show_on_bottom: true,
-                custom_prompt: Some("send to> ".to_string()),
-                ..Default::default()
-            },
-            sc_ix,
-        );
-        if let Ok(MenuMatch::Line(_, choice)) = dmenu.build_menu(ALL_TAGS.clone()) {
-            Ok(state.client_set.move_focused_to_tag(choice))
-        } else {
-            Ok(())
-        }
-    })
-}
 
 fn raw_key_bindings() -> HashMap<String, Box<dyn KeyEventHandler<RustConn>>> {
     let action_bindings = map! {
