@@ -47,6 +47,8 @@ fn raw_key_bindings() -> HashMap<String, Box<dyn KeyEventHandler<RustConn>>> {
         "M-f" => GOTO_WS(),
         "M-g" => workspace_menu(),
         "M-S-g" => send_to_workspace_menu(),
+        "M-Left" => modify_with(|cs| cs.focus_previous_workspace()),
+        "M-Right" => modify_with(|cs| cs.focus_next_workspace()),
         "M-n" => modify_with(|cs| cs.focus_down()),
         "M-a" => modify_with(|cs| cs.focus_up()),
         "M-S-n" => modify_with(|cs| cs.swap_down()),

@@ -58,7 +58,10 @@ struct AppConfig {
 impl Default for AppConfig {
     fn default() -> Self {
         AppConfig {
-            titles: Vec::new(),
+            titles: [("LibreOffice Calc", "󰧷"), ("LibreOffice Writer", "")]
+                .iter()
+                .map(|(key, val)| (key.to_string(), val.to_string()))
+                .collect(),
             processes: [("spotify", "🎵"), ("firefox", "🦊")]
                 .iter()
                 .map(|(key, val)| (key.to_string(), val.to_string()))
@@ -83,15 +86,20 @@ impl AppInfo {
             .processes
             .iter()
             .map(|(proc, icon)| {
-                {
-                    if self.processes.iter().any(|pname| pname.contains(proc)) {
-                        icon
-                    } else {
-                        ""
-                    }
+                if self.processes.iter().any(|pname| pname.contains(proc)) {
+                    icon
+                } else {
+                    ""
                 }
-                .to_string()
             })
+            .chain(APP_CONFIG.titles.iter().map(|(conf_title, icon)| {
+                if self.titles.iter().any(|title| title.contains(conf_title)) {
+                    icon
+                } else {
+                    ""
+                }
+            }))
+            .map(|str| str.to_string())
             .collect();
         let icons: String = icon_list.concat();
         if icons.is_empty() {

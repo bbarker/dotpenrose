@@ -1,6 +1,6 @@
 [package]
 name = "penrose_bbarker_contrib"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Brandon Barker <brandon.barker@gmail.com>"]
 edition = "2021"
 license = "MPL-2.0"

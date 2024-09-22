@@ -59,6 +59,7 @@ pub fn goto_workspace_by_apps(
                 &DMenuConfig {
                     kind: DMenuKind::Rust,
                     custom_prompt: Some("workspace> ".to_string()),
+                    ignore_case: true,
                     ..Default::default()
                 },
                 sc_ix,
