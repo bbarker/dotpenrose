@@ -4,9 +4,9 @@ export SSH_AUTH_SOCK
 eval $(ssh-agent)
 
 while true; do
-  # log out to a file
   "$PENROSE_DIR/target/release/dotpenrose" &> ~/.penrose.log
+  # RUST_BACKTRACE=full "$PENROSE_DIR/target/debug/dotpenrose" &> ~/.penrose.log
   # start a new log file if there's an error
-  [[ $? > 0 ]] && mv ~/.penrose.log ~/prev-penrose.log
+  [[ $? > 0 ]] && mv ~/.penrose.log ~/.penrose-prev.log
   export RESTARTED=true
 done

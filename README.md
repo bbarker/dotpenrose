@@ -1,9 +1,6 @@
 # TODO
 
-1. yeganesh or dmenu app launcher?
 2. some .config was copied manually: either write a build script to ln -s this or manage with home-manager.
-3. port over xmonad
-4. NixOS install section
 
 # My Penrose Window Manager Setup
 A customized tiling window manger configuration for X11 linux, using [Penrose](https://github.com/sminez/penrose).
@@ -42,7 +39,17 @@ Then follow the configuration section below.
 
 To run, `startx` from a shell where you have run `nix develop`.
 
-### Arch
+### Non-NixOS
+
+You'll need to install dmenu-rs separately; currently this involves building from source and copying
+the executables to the PATH.
+
+At this time, you'll want to be sure you have `unifont` installed, as a fallback to rendering certain
+glyphs from other font packages. This may be fixed in more recent versions of libXft2; see
+[this issue](https://github.com/pop-os/pop/issues/3393).
+
+#### Arch
+
 Install dependencies (arch):
 
 ```shell

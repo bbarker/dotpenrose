@@ -57,6 +57,8 @@ fn raw_key_bindings() -> HashMap<String, Box<dyn KeyEventHandler<RustConn>>> {
         "M-Tab" => modify_with(|cs| cs.toggle_tag()),
         "M-m" => modify_with(|cs| cs.next_screen()),
         "M-i" => modify_with(|cs| cs.previous_screen()),
+        "M-s" => modify_with(|cs| cs.drag_workspace_forward()),
+        "M-S-s" => modify_with(|cs| cs.drag_workspace_backward()),
         "M-space" => modify_with(|cs| cs.next_layout()),
         "M-S-space" => modify_with(|cs| cs.previous_layout()),
         "M-S-Up" => send_layout_message(|| IncMain(1)),
@@ -132,5 +134,7 @@ fn main() -> Result<()> {
         HashMap::new(),
         conn,
     )?);
+    // FIXME: debugging bar on the desktop
+    // let wm = WindowManager::new(config, key_bindings, HashMap::new(), conn)?;
     wm.run()
 }
