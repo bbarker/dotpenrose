@@ -29,15 +29,20 @@ this config should suffice for `configuration.nix`:
   };
 ```
 
-
 ```
 nix develop
 cargo build --release
 ```
-
 Then follow the configuration section below. 
 
 To run, `startx` from a shell where you have run `nix develop`.
+
+### nix-build
+
+The nix-build work is a work-in-progress; currently it still
+needs to have the local repo for things like `.xinitrc`, scripts,
+and wallpapers. It can be tested by running `nix profile install`
+and setting `WHICH_PENROSE` to `ON_PATH`.
 
 ### Non-NixOS
 

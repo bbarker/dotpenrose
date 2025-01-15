@@ -1,4 +1,3 @@
-# flake.nix
 {
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
@@ -21,6 +20,16 @@
 
           craneLib = (crane.mkLib pkgs).overrideToolchain pkgs.rust-bin.stable.latest.default;
           
+          # Define runtime dependencies separately
+          runtimeDeps = with pkgs; [
+            nitrogen
+            picom
+            haskellPackages.yeganesh
+            xscreensaver
+            dmenu-rs
+            gnome-keyring
+          ];
+
           # Common arguments can be set here to avoid repeating them later
           commonArgs = {
             src = craneLib.cleanCargoSource (craneLib.path ./.);
@@ -34,12 +43,15 @@
               xorg.libXi
               xorg.libXft
               libglvnd
-            ];
+            ] ++ runtimeDeps;  # Add runtime deps to buildInputs
 
             nativeBuildInputs = with pkgs; [
               pkg-config
               makeWrapper
             ];
+
+            # Explicitly declare runtime dependencies
+            propagatedBuildInputs = runtimeDeps;
           };
 
           # Build dependencies
@@ -52,14 +64,7 @@
             postInstall = ''
               # Wrap the binary with necessary runtime dependencies
               wrapProgram $out/bin/dotpenrose \
-                --prefix PATH : ${pkgs.lib.makeBinPath (with pkgs; [
-                  nitrogen
-                  picom
-                  haskellPackages.yeganesh
-                  xscreensaver
-                  dmenu-rs
-                  gnome-keyring
-                ])} \
+                --prefix PATH : ${pkgs.lib.makeBinPath runtimeDeps} \
                 --set LD_LIBRARY_PATH "${pkgs.lib.makeLibraryPath (with pkgs; [
                   libxkbcommon
                   mesa.drivers
@@ -90,7 +95,7 @@
               rust-bin.stable.latest.default
               rust-analyzer
               nerdfonts
-            ];
+            ] ++ runtimeDeps;  # Add runtime deps to devShell
 
             RUSTFLAGS = map (a: "-C link-arg=${a}") [
               "-Wl,--push-state,--no-as-needed"
@@ -100,6 +105,7 @@
             ];
 
             shellHook = ''
+              export PATH="${pkgs.bashInteractive}/bin:$PATH"
               mkdir -p $HOME/.local/share/fonts
               cp --update=none $(nix-build --no-out-link '<nixpkgs>' -A nerdfonts)/share/fonts/opentype/NerdFonts/*Hasklug*.otf ~/.local/share/fonts
               fc-cache
