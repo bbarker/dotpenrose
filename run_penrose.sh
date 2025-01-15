@@ -8,7 +8,7 @@ rotate_log() {
     mv ~/.penrose.log ~/.penrose-prev.log
 }
 
-trap rotate_log SIGTERM
+# trap rotate_log SIGTERM
 
 WHICH_PENROSE=${WHICH_PENROSE:-ON_PATH}
 
@@ -16,11 +16,11 @@ while true; do
     if [ "$WHICH_PENROSE" = "ON_PATH" ]; then
         dotpenrose &> ~/.penrose.log
     else
-        "$PENROSE_DIR/target/release/dotpenrose" &> ~/.penrose.log
+        "$PENROSE_DIR/target/release/dotpenrose" &>> ~/.penrose.log
     fi
     # RUST_BACKTRACE=full "$PENROSE_DIR/target/debug/dotpenrose" &> ~/.penrose.log
     # Rotate log if there's an error or if the process was terminated
-    [[ $? > 0 ]] && mv ~/.penrose.log ~/.penrose-prev.log
+    # [[ $? > 0 ]] && mv ~/.penrose.log ~/.penrose-prev.log
     export RESTARTED=true
-    rotate_log
+    # rotate_log
 done

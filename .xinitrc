@@ -21,7 +21,6 @@ if [ -d /etc/X11/xinit/xinitrc.d ]; then
 fi
 
 log_msg "begin xrandr commands"
-export PENROSE_DIR="$HOME/workspace/dotpenrose"
 xrandr --output DP-2 --rotate left && 
 xrandr --output DP-0 --rotate left --right-of DP-2 &&
 xrandr --output DP-4 --rotate left --left-of DP-2 &&

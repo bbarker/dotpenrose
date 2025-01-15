@@ -106,6 +106,7 @@
 
             shellHook = ''
               export PATH="${pkgs.bashInteractive}/bin:$PATH"
+              export PENROSE_DIR="$HOME/workspace/dotpenrose"
               mkdir -p $HOME/.local/share/fonts
               cp --update=none $(nix-build --no-out-link '<nixpkgs>' -A nerdfonts)/share/fonts/opentype/NerdFonts/*Hasklug*.otf ~/.local/share/fonts
               fc-cache
