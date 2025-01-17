@@ -16,7 +16,8 @@ while true; do
     if [ "$WHICH_PENROSE" = "ON_PATH" ]; then
         dotpenrose &> ~/.penrose.log
     else
-        "$PENROSE_DIR/target/release/dotpenrose" &>> ~/.penrose.log
+        strace -f -e trace=file "$PENROSE_DIR/target/release/dotpenrose" &>> ~/.penrose.log
+        # "$PENROSE_DIR/target/release/dotpenrose" &>> ~/.penrose.log
     fi
     # RUST_BACKTRACE=full "$PENROSE_DIR/target/debug/dotpenrose" &> ~/.penrose.log
     # Rotate log if there's an error or if the process was terminated

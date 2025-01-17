@@ -20,7 +20,20 @@
 
           craneLib = (crane.mkLib pkgs).overrideToolchain pkgs.rust-bin.stable.latest.default;
           
-          # Define runtime dependencies separately
+          penroseBuildInputs = with pkgs; [
+              wayland
+              xorg.libX11
+              xorg.libXcursor
+              xorg.libXrandr
+              xorg.libXxf86vm
+              xorg.libXi
+              xorg.libXft
+              libxkbcommon
+              mesa.drivers
+              libglvnd
+              vulkan-loader
+          ];
+
           runtimeDeps = with pkgs; [
             nitrogen
             picom
@@ -30,20 +43,12 @@
             gnome-keyring
           ];
 
+          
           # Common arguments can be set here to avoid repeating them later
           commonArgs = {
             src = craneLib.cleanCargoSource (craneLib.path ./.);
             
-            buildInputs = with pkgs; [
-              wayland
-              xorg.libX11
-              xorg.libXcursor
-              xorg.libXrandr
-              xorg.libXxf86vm
-              xorg.libXi
-              xorg.libXft
-              libglvnd
-            ] ++ runtimeDeps;  # Add runtime deps to buildInputs
+            buildInputs =  penroseBuildInputs ++ runtimeDeps;
 
             nativeBuildInputs = with pkgs; [
               pkg-config
@@ -53,6 +58,8 @@
             # Explicitly declare runtime dependencies
             propagatedBuildInputs = runtimeDeps;
           };
+          runtimeDepsPath = pkgs.lib.makeBinPath runtimeDeps;
+          ldLibraryPath = pkgs.lib.makeLibraryPath penroseBuildInputs;
 
           # Build dependencies
           cargoArtifacts = craneLib.buildDepsOnly commonArgs;
@@ -64,16 +71,8 @@
             postInstall = ''
               # Wrap the binary with necessary runtime dependencies
               wrapProgram $out/bin/dotpenrose \
-                --prefix PATH : ${pkgs.lib.makeBinPath runtimeDeps} \
-                --set LD_LIBRARY_PATH "${pkgs.lib.makeLibraryPath (with pkgs; [
-                  libxkbcommon
-                  mesa.drivers
-                  vulkan-loader
-                  xorg.libX11
-                  xorg.libXcursor
-                  xorg.libXi
-                  xorg.libXrandr
-                ])}"
+                --prefix PATH : ${runtimeDepsPath} \
+                --set LD_LIBRARY_PATH "${ldLibraryPath}"
 
               # Setup fonts
               mkdir -p $out/share/fonts
@@ -97,6 +96,9 @@
               nerdfonts
             ] ++ runtimeDeps;  # Add runtime deps to devShell
 
+            
+            LD_LIBRARY_PATH = ldLibraryPath;
+
             RUSTFLAGS = map (a: "-C link-arg=${a}") [
               "-Wl,--push-state,--no-as-needed"
               "-lEGL"
@@ -105,7 +107,8 @@
             ];
 
             shellHook = ''
-              export PATH="${pkgs.bashInteractive}/bin:$PATH"
+              export WHICH_PENROSE=DEVELOP
+              export PATH="${pkgs.bashInteractive}/bin:${runtimeDepsPath}:$PATH"
               export PENROSE_DIR="$HOME/workspace/dotpenrose"
               mkdir -p $HOME/.local/share/fonts
               cp --update=none $(nix-build --no-out-link '<nixpkgs>' -A nerdfonts)/share/fonts/opentype/NerdFonts/*Hasklug*.otf ~/.local/share/fonts
