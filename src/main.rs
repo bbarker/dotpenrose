@@ -142,7 +142,6 @@ fn main() -> Result<()> {
         conn,
     )?);
     log_penrose("DEBUG: created wm")?;
-    // FIXME: debugging bar on the desktop
-    // let wm = WindowManager::new(config, key_bindings, HashMap::new(), conn)?;
+    let wm = WindowManager::new(config, key_bindings, HashMap::new(), conn)?;
     wm.run()
 }

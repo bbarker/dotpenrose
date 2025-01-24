@@ -4,6 +4,7 @@
 #
 # Executed by startx (run your window manager from here)
 
+export PENROSE_DIR=${PENROSE_DIR:-"$HOME/workspace/dotpenrose"}
 LOG_FILE="$HOME/.xinitrc.log"
 log_msg() {
   echo "$1" >> "$LOG_FILE"

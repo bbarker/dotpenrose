@@ -41,6 +41,7 @@
             xscreensaver
             dmenu-rs
             gnome-keyring
+            xorg.xmodmap
           ];
 
           
