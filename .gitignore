@@ -1,5 +1,6 @@
 /target
 /vendor
 /.idea
-Cargo.lock
 nohup.out
+result
+*.log
