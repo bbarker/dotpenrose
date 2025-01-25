@@ -24,7 +24,6 @@ use penrose::{
 };
 use penrose_bbarker_contrib::{
     is_in_path, is_running,
-    log::log_penrose,
     menus::finder::{
         goto_workspace_by_apps, send_to_workspace_menu, workspace_menu, GOTO_WS_CONFIG,
     },
@@ -98,13 +97,11 @@ fn layout() -> LayoutStack {
 }
 
 fn main() -> Result<()> {
-    log_penrose("DEBUG: entered main")?;
     tracing_subscriber::fmt()
         .with_env_filter("info")
         .finish()
         .init();
 
-    log_penrose("DEBUG: creeated tracing_subscriber")?;
     let startup_progs: NonEmpty<[(&str, &str); 2]> = nunny::array![
         ("xscreensaver", ""),
         ("nvidia-settings", "--load-config-only"),
@@ -114,7 +111,6 @@ fn main() -> Result<()> {
         .into_iter()
         .filter(|(prog, _)| is_in_path(prog) && !is_running(prog))
         .collect();
-    log_penrose("DEBUG: creeated progs_to_start")?;
     let startup_hook = progs_to_start
         .into_iter()
         .map(
@@ -122,7 +118,6 @@ fn main() -> Result<()> {
         )
         .collect::<Vec<_>>();
 
-    log_penrose("DEBUG: creeated startup_hook")?;
     let conn = RustConn::new()?;
     let key_bindings = parse_keybindings_with_xmodmap(raw_key_bindings())?;
     let config = add_ewmh_hooks(Config {
@@ -132,16 +127,12 @@ fn main() -> Result<()> {
         ..Default::default()
     });
 
-    log_penrose("DEBUG: defined config")?;
     let bar = status_bar().unwrap(); // FIXME: properaly convert error
-    log_penrose("DEBUG: created status bar")?;
     let wm = bar.add_to(WindowManager::new(
         config,
         key_bindings,
         HashMap::new(),
         conn,
     )?);
-    log_penrose("DEBUG: created wm")?;
-    let wm = WindowManager::new(config, key_bindings, HashMap::new(), conn)?;
     wm.run()
 }
