@@ -13,7 +13,7 @@ trap rotate_log SIGTERM
 WHICH_PENROSE=${WHICH_PENROSE:-ON_PATH}
 
 while true; do
-    if [ "$WHICH_PENROSE" = "ON_PATH" ]; then
+    if [ "$WHICH_PENROSE" = "ON_PATH" ] && command -v dotpenrose &> /dev/null; then
         dotpenrose &> ~/.penrose.log
     else
         "$PENROSE_DIR/target/release/dotpenrose" &>> ~/.penrose.log
