@@ -1,6 +1,6 @@
 {
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
     flake-utils.url = "github:numtide/flake-utils";
     rust-overlay.url = "github:oxalica/rust-overlay";
     crane = {
@@ -29,7 +29,7 @@
               xorg.libXi
               xorg.libXft
               libxkbcommon
-              mesa.drivers
+              mesa
               libglvnd
               vulkan-loader
           ];
@@ -77,7 +77,7 @@
 
               # Setup fonts
               mkdir -p $out/share/fonts
-              cp --update=none ${pkgs.nerdfonts}/share/fonts/opentype/NerdFonts/*Hasklug*.otf $out/share/fonts/
+              cp --update=none ${pkgs.nerd-fonts.hasklug}/share/fonts/opentype/NerdFonts/Hasklug/*Hasklug*.otf $out/share/fonts/
             '';
           });
 
@@ -94,7 +94,7 @@
             buildInputs = with pkgs; [
               rust-bin.stable.latest.default
               rust-analyzer
-              nerdfonts
+              nerd-fonts.hasklug
             ] ++ runtimeDeps;  # Add runtime deps to devShell
 
             
@@ -112,7 +112,7 @@
               export PATH="${pkgs.bashInteractive}/bin:${runtimeDepsPath}:$PATH"
               export PENROSE_DIR="$HOME/workspace/dotpenrose"
               mkdir -p $HOME/.local/share/fonts
-              cp --update=none $(nix-build --no-out-link '<nixpkgs>' -A nerdfonts)/share/fonts/opentype/NerdFonts/*Hasklug*.otf ~/.local/share/fonts
+              cp --update=none $(nix-build --no-out-link '<nixpkgs>' -A nerd-fonts.hasklug)/share/fonts/opentype/NerdFonts/Hasklug/*Hasklug*.otf ~/.local/share/fonts
               fc-cache
             '';
           };
