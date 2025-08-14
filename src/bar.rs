@@ -332,7 +332,11 @@ impl<X: XConn> Widget<X> for Wedge {
 
         let p = if self.start { 0 } else { h };
         ctx.fill_polygon(
-            &[Point::new(p, p), Point::new(h, 0), Point::new(0, h)],
+            &[
+                Point::new(p as i32, p as i32),
+                Point::new(h as i32, 0),
+                Point::new(0, h as i32),
+            ],
             self.fg,
         )
     }
