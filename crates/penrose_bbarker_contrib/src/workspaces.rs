@@ -39,7 +39,7 @@ where
                     if let Some(process) = system.process(Pid::from(pid as usize)) {
                         process
                             .exe()
-                            .and_then(|exe_path| std::path::Path::new(exe_path).file_name())
+                            .and_then(|exe_path| exe_path.file_name())
                             .map_or_else(
                                 || "Unknown".to_string(),
                                 |os_str| os_str.to_string_lossy().into_owned(),
