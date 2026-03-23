@@ -12,6 +12,10 @@ trap rotate_log SIGTERM
 
 WHICH_PENROSE=${WHICH_PENROSE:-ON_PATH}
 
+if [ -z "$RESTARTED" ] && [ -f "$HOME/.local/bin/apply-xrandr-layout" ]; then
+    /bin/bash "$HOME/.local/bin/apply-nvidia-layout" &
+fi
+
 while true; do
     if [ "$WHICH_PENROSE" = "ON_PATH" ] && command -v dotpenrose &> /dev/null; then
         dotpenrose &> ~/.penrose.log
