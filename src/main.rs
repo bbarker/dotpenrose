@@ -4,7 +4,11 @@ use nunny::NonEmpty;
 use once_cell::sync::Lazy;
 use penrose::{
     builtin::{
-        actions::{exit, modify_with, send_layout_message, spawn},
+        actions::{
+            exit,
+            floating::{MouseDragHandler, MouseResizeHandler},
+            modify_with, send_layout_message, spawn,
+        },
         layout::{
             messages::{ExpandMain, IncMain, ShrinkMain},
             transformers::ReserveTop,
@@ -12,7 +16,10 @@ use penrose::{
         },
     },
     core::{
-        bindings::{parse_keybindings_with_xmodmap, KeyEventHandler},
+        bindings::{
+            parse_keybindings_with_xmodmap, KeyEventHandler, ModifierKey, MouseButton,
+            MouseEventHandler, MouseState,
+        },
         hooks::StateHook,
         layout::LayoutStack,
         Config, WindowManager,
@@ -91,6 +98,15 @@ fn raw_key_bindings() -> HashMap<String, Box<dyn KeyEventHandler<RustConn>>> {
         .collect::<HashMap<String, Box<dyn KeyEventHandler<RustConn>>>>()
 }
 
+fn mouse_bindings() -> HashMap<MouseState, Box<dyn MouseEventHandler<RustConn>>> {
+    map! {
+        map_keys: |(button, modifiers)| MouseState { button, modifiers };
+
+        (MouseButton::Left, vec![ModifierKey::Meta]) => MouseDragHandler::boxed_default(),
+        (MouseButton::Right, vec![ModifierKey::Meta]) => MouseResizeHandler::boxed_default(),
+    }
+}
+
 fn layout() -> LayoutStack {
     let stack = MainAndStack::side(1, 0.5, 0.1);
     stack!(stack).map(|layout| ReserveTop::wrap(layout, BAR_HEIGHT_PX_PRIMARY))
@@ -131,7 +147,7 @@ fn main() -> Result<()> {
     let wm = bar.add_to(WindowManager::new(
         config,
         key_bindings,
-        HashMap::new(),
+        mouse_bindings(),
         conn,
     )?);
     wm.run()

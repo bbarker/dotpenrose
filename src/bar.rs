@@ -143,8 +143,8 @@ impl MyWorkspaceUi {
 impl WorkspacesUi for MyWorkspaceUi {
     fn update_from_state<X>(
         &mut self,
-        workspace_meta: &[WsMeta],
-        focused_tags: &[String],
+        _workspace_meta: &[WsMeta],
+        _focused_tags: &[String],
         state: &State<X>,
         xcon: &X,
     ) -> bool
